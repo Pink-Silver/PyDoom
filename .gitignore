@@ -54,3 +54,17 @@ docs/_build/
 
 CMakeCache.txt
 CMakeFiles/
+
+# Building
+Release/
+Debug/
+*.dir/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.sdf
+*.opensdf
+*.suo
+cmake_install.cmake
+*/cmake_install.cmake
