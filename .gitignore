@@ -52,13 +52,18 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
+# CMake
 CMakeCache.txt
 CMakeFiles/
+cmake_install.cmake
+*/cmake_install.cmake
+*.dir/
 
 # Building
 Release/
 Debug/
-*.dir/
+Win32/
+ipch/
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
@@ -66,5 +71,3 @@ Debug/
 *.sdf
 *.opensdf
 *.suo
-cmake_install.cmake
-*/cmake_install.cmake
