@@ -8,26 +8,23 @@ cmake_minimum_required (VERSION 2.8)
 project (PyDoom)
 
 # Version information
-set (PyDoom_VERSION_MAJOR 1)
-set (PyDoom_VERSION_MINOR 0)
+set (Python_ADDITIONAL_VERSIONS "3.4")
 
 # Dependencies
-#   Python
-set (Python_ADDITIONAL_VERSIONS "3.4")
-find_package (PythonLibs)
-find_package (PythonInterp)
-if (!PYTHONLIBS_FOUND)
-    message (FATAL_ERROR "Python is required to compile PyDoom.")
-endif ()
-if (!PYTHONINTERP_FOUND)
-    message (FATAL_ERROR "Python is required to compile PyDoom.")
-endif ()
-include_directories ("${PYTHON_INCLUDE_DIRS}")
+find_package (PythonLibs   REQUIRED)
+find_package (PythonInterp REQUIRED)
+find_package (OpenGL       REQUIRED)
+#find_package (FLTK         REQUIRED)
 
-# Source
+# Building
+include_directories ("${PYTHON_INCLUDE_DIRS}")
 add_executable (PyDoom "src/main.cpp")
 target_link_libraries (PyDoom "${PYTHON_LIBRARIES}")
 
-add_custom_command (TARGET PyDoom POST_BUILD
-                    COMMAND ${PYTHON_EXECUTABLE}
-                        ARGS "./MakeProgramZip.py" "$(OutDir)PyDoom.zip")
+# Program zip
+add_custom_target (PyDoom.zip ALL ${PYTHON_EXECUTABLE} "MakeProgramZip.py"
+    "$<TARGET_FILE_DIR:PyDoom>")
+
+# C-Python extensions
+add_custom_target (DistUtils ALL ${PYTHON_EXECUTABLE} "distutils_setup.py"
+    "build_ext" "--build-lib" "$<TARGET_FILE_DIR:PyDoom>")
