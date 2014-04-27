@@ -1,5 +1,5 @@
 configure_file (
-    "columnrender_setup.py.in"
+    "columnrender_setup.in.py"
     "${PyDoom_BINARY_DIR}/columnrender_setup.py"
     )
 

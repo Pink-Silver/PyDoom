@@ -30,7 +30,7 @@ if (GIT_FOUND)
 endif ()
 
 configure_file (
-    "${PyDoom_SOURCE_DIR}/src/pydoom_version.py.in"
+    "${PyDoom_SOURCE_DIR}/src/pydoom_version.in.py"
     "${PyDoom_SOURCE_DIR}/pysrc/pydoom_version.py"
     )
 
