@@ -1,8 +1,4 @@
 #include <Python.h>
-#ifdef _MSC_VER
-#include <Windows.h>
-#endif
-#include <gl/gl.h>
 
 static PyMethodDef rmethods[] = {
     {NULL, NULL, 0, NULL} // Sentinel
@@ -10,13 +6,13 @@ static PyMethodDef rmethods[] = {
 
 static struct PyModuleDef rmodule = {
     PyModuleDef_HEAD_INIT,
-    "gl2d_renderer",
+    "columnrenderer",
     "The 2D column-based renderer for PyDoom",
     -1,
     rmethods
 };
 
-PyMODINIT_FUNC PyInit_gl2d_renderer (void)
+PyMODINIT_FUNC PyInit_columnrenderer (void)
 {
     PyObject *m;
     

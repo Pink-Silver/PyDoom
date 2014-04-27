@@ -1,5 +1,14 @@
-#include "SDL.h"
+// Python
 #include <Python.h>
+
+// SDL
+#include "SDL.h"
+
+// OpenGL
+#ifdef _MSC_VER
+#include <Windows.h>
+#endif
+#include <gl/gl.h>
 
 int main (int argc, char *argv[])
 {

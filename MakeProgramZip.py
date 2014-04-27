@@ -1,21 +1,25 @@
 import zipfile, glob, os.path
 from sys import argv
+from os import listdir
 
-def main (path):
-    outfile = os.path.join (path, "PyDoom.zip")
+def main (inpath, outpath):
+    inpath  = os.path.normpath (inpath)
+    outpath = os.path.normpath (outpath)
+    if not os.path.exists (inpath):
+        raise ValueError ("{} does not exist!".format (inpath))
+    outfile = os.path.join (outpath, "PyDoom.zip")
     print ("Writing {}...".format (outfile))
 
     with zipfile.ZipFile (outfile, "w") as openedzip:
-        fnames = glob.iglob ("pysrc/*")
+        fnames = listdir (inpath)
         total = 0
 
         for fn in fnames:
-            name = "/".join (os.path.split (fn)[1:])
-            print ("- Adding {}".format (name))
-            openedzip.write (fn, arcname=name)
+            print ("- Adding {}".format (fn))
+            openedzip.write (os.path.join (inpath, fn), arcname=fn)
             total += 1
 
-    print ("{} total file(s) written.".format (total))
+    print ("{} total file{} written.".format (total, ("s" if total != 1 else "")))
 
 if __name__ == "__main__":
-    main (argv[1])
+    main (argv[1], argv[2])
