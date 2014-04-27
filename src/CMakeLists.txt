@@ -8,6 +8,7 @@ include_directories ("${PYTHON_INCLUDE_DIRS}" "${SDL_INCLUDE_DIR}")
 
 add_executable (PyDoom
     main.cpp
+    toplevel.cpp
 )
 
 target_link_libraries (PyDoom "${PYTHON_LIBRARIES}" "${SDL_LIBRARY}" "${SDLMAIN_LIBRARY}")

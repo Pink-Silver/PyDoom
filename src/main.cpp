@@ -7,12 +7,16 @@
 // Python
 #include <Python.h>
 
+#include "toplevel.hpp"
+
 int main (int argc, char *argv[])
 {
+    PyImport_AppendInittab ("toplevel", PyInit_toplevel);
+    
     Py_SetProgramName (L"PyDoom");
     Py_Initialize ();
     
-    // Coerce arguments
+    // Feed command-line arguments to Python
     PyObject *args = PyList_New ((Py_ssize_t)argc);
     for (Py_ssize_t i = 0; i < argc; ++i)
     {
@@ -23,11 +27,17 @@ int main (int argc, char *argv[])
     PySys_SetObject ("argv", args);
     
     // Path alteration
-#ifdef WIN32
-    PySys_SetPath (L";PyDoom.zip");
-#else
-    PySys_SetPath (L":PyDoom.zip");
-#endif
+    PyObject *path_list = PySys_GetObject ("path");
+    
+    if (path_list)
+    {
+        PyObject *pydoom_zip = PyUnicode_FromString ("PyDoom.zip");
+        PyList_Insert (path_list, 0, pydoom_zip);
+        Py_DECREF (pydoom_zip);
+    }
+    
+    // Initialize the other underlying subsystems
+    InitToplevel ();
     
     // Jump into the main program
     PyRun_SimpleString (
@@ -35,6 +45,9 @@ int main (int argc, char *argv[])
         "main.main ()\n"
     );
     
+    // Clean up
+    QuitToplevel ();
     Py_Exit (0);
+    
     return 0;
 }
