@@ -1,6 +1,7 @@
-from pydoom_version import GITVERSION
+from version import GITVERSION
 from time import sleep
 from sys import argv, path
+import columnrenderer
 
 def main ():
     print ("=== PyDoom revision {} ===".format (GITVERSION))
