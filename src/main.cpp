@@ -1,14 +1,11 @@
+// Copyright (c) 2014, Kate Stone
+// All rights reserved.
+//
+// This file is covered by the 3-clause BSD license.
+// See the LICENSE file in this program's distribution for details.
+
 // Python
 #include <Python.h>
-
-// SDL
-#include "SDL.h"
-
-// OpenGL
-#ifdef WIN32
-#include <Windows.h>
-#endif
-#include <gl/gl.h>
 
 int main (int argc, char *argv[])
 {
@@ -33,7 +30,10 @@ int main (int argc, char *argv[])
 #endif
     
     // Jump into the main program
-    PyRun_SimpleString ("import main\nmain.main ()\n");
+    PyRun_SimpleString (
+        "import main\n"
+        "main.main ()\n"
+    );
     
     Py_Exit (0);
     return 0;
