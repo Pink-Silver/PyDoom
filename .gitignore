@@ -57,13 +57,13 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 */cmake_install.cmake
-*.dir/
 
 # Building
 Release/
 Debug/
 Win32/
 ipch/
+*.dir/
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
