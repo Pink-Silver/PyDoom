@@ -35,20 +35,11 @@ configure_file (
     )
 
 # Building
-include_directories ("${PYTHON_INCLUDE_DIRS}" "${SDL_INCLUDE_DIR}")
-add_executable (PyDoom "src/main.cpp")
-target_link_libraries (PyDoom "${PYTHON_LIBRARIES}" "${SDL_LIBRARY}" "${SDLMAIN_LIBRARY}")
+add_subdirectory (src)
+add_subdirectory (columnrender_src)
 
 # Program zip
 add_custom_target (PyDoom.zip ALL
     ${PYTHON_EXECUTABLE} "${PyDoom_SOURCE_DIR}/MakeProgramZip.py"
-    "${PyDoom_SOURCE_DIR}/pysrc" "$<TARGET_FILE_DIR:PyDoom>")
-
-# C-Python extensions
-configure_file (
-    "${PyDoom_SOURCE_DIR}/columnrender_setup.py.in"
-    "${PyDoom_BINARY_DIR}/columnrender_setup.py"
-    )
-add_custom_target (DistUtils ALL
-    ${PYTHON_EXECUTABLE} "${PyDoom_BINARY_DIR}/columnrender_setup.py"
-    "build_ext" "--build-lib" "$<TARGET_FILE_DIR:PyDoom>")
+    "${PyDoom_SOURCE_DIR}/pysrc" "${PyDoom_BINARY_DIR}")
+install (FILES "${PyDoom_BINARY_DIR}/PyDoom.zip" DESTINATION ${CMAKE_INSTALL_PREFIX})
