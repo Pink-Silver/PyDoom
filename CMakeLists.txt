@@ -14,12 +14,12 @@ set (Python_ADDITIONAL_VERSIONS "3.4")
 find_package (PythonLibs   REQUIRED)
 find_package (PythonInterp REQUIRED)
 find_package (OpenGL       REQUIRED)
-#find_package (FLTK         REQUIRED)
+find_package (SDL          REQUIRED)
 
 # Building
-include_directories ("${PYTHON_INCLUDE_DIRS}")
+include_directories ("${PYTHON_INCLUDE_DIRS}" "${SDL_INCLUDE_DIR}")
 add_executable (PyDoom "src/main.cpp")
-target_link_libraries (PyDoom "${PYTHON_LIBRARIES}")
+target_link_libraries (PyDoom "${PYTHON_LIBRARIES}" "${SDL_LIBRARY}" "${SDLMAIN_LIBRARY}")
 
 # Program zip
 add_custom_target (PyDoom.zip ALL ${PYTHON_EXECUTABLE} "MakeProgramZip.py"
