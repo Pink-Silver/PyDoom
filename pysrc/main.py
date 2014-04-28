@@ -7,11 +7,12 @@
 from version import GITVERSION
 from time import sleep
 from sys import argv, path
-import columnrenderer
-import toplevel
+import arguments
 
 def main ():
     print ("=== PyDoom revision {} ===".format (GITVERSION))
-    print ("Received arguments: {} ({} total)".format (" ".join (argv), len (argv)))
-    print ("Current Python paths: {} ({} total)".format (", ".join (path), len (path)))
+    print ("Command-line arguments:")
+    args = arguments.ArgumentParser (argv[1:])
+    args.CollectArgs ()
+    del args
     sleep (20)
