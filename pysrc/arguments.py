@@ -38,8 +38,9 @@ class ArgumentParser:
                 optlist = [self.args.pop (0)[1:]]
             else:
                 optlist.append (self.args.pop (0))
-            
-        print ("{}: {}".format (argindex, " ".join (optlist))) # For now
+        
+        if optlist:
+            print ("{}: {}".format (argindex, " ".join (optlist))) # For now
     
     def IsOption (self, item):
         """Returns True if the argument is the start of a new
