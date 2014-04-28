@@ -6,11 +6,15 @@
 
 // Python
 #include <Python.h>
+#include <cstdlib>
 
 #include "toplevel.hpp"
 
 int main (int argc, char *argv[])
 {
+    // Disable user site-packages; we only want the system-wide libraries.
+    putenv ("PYTHONNOUSERSITE=1");
+    
     PyImport_AppendInittab ("toplevel", PyInit_toplevel);
     
     Py_SetProgramName (L"PyDoom");
