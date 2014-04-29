@@ -5,6 +5,7 @@
 // See the LICENSE file in this program's distribution for details.
 
 // Python
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <cstdlib>
 
