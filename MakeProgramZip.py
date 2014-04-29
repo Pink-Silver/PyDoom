@@ -6,7 +6,7 @@
 
 import zipfile, glob, os.path
 from sys import argv
-from os import listdir
+from glob import glob
 
 def main (inpath, outpath):
     inpath  = os.path.normpath (inpath)
@@ -17,7 +17,7 @@ def main (inpath, outpath):
     print ("Writing {}...".format (outfile))
 
     with zipfile.ZipFile (outfile, "w") as openedzip:
-        fnames = listdir (inpath)
+        fnames = (i[len(inpath)+1:] for i in glob (os.path.join (inpath, '*.py')))
         total = 0
 
         for fn in fnames:
