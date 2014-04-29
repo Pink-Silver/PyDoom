@@ -19,6 +19,7 @@
 
 static SDL_Window *topwindow;
 static SDL_GLContext *glcontext;
+static int topwinwidth, topwinheight;
 
 bool InitToplevel (void)
 {
@@ -70,6 +71,9 @@ PyObject * toplevel_CreateWindow (PyObject *self, PyObject *args)
         topwindow = NULL;
         Py_RETURN_FALSE;
     }
+    
+    topwinwidth  = width;
+    topwinheight = height;
 
     Py_RETURN_TRUE;
 }
@@ -84,6 +88,9 @@ PyObject * toplevel_DestroyWindow (PyObject *self, PyObject *args)
         delete glcontext;
     }
     
+    topwinwidth  = 0;
+    topwinheight = 0;
+    
     Py_RETURN_NONE;
 }
 
@@ -95,13 +102,25 @@ PyObject * toplevel_HaveWindow (PyObject *self, PyObject *args)
     Py_RETURN_TRUE;
 }
 
+PyObject * toplevel_UpdateWindow (PyObject *self, PyObject *args)
+{
+    if (!topwindow)
+        Py_RETURN_NONE;
+    
+    SDL_GL_SwapWindow (topwindow);
+    
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef toplevel_methods[] = {
     { "CreateWindow",  toplevel_CreateWindow,  METH_VARARGS,
     "Creates the top-level window. Returns True if a new window was created, False otherwise." },
     { "DestroyWindow", toplevel_DestroyWindow, METH_NOARGS,
-    "Destroys the top-level window if there is one. No return." },
+    "Destroys the top-level window if there is one." },
     { "HaveWindow",    toplevel_HaveWindow,    METH_NOARGS,
     "Returns True if there's a top-level window, False otherwise." },
+    { "UpdateWindow",  toplevel_UpdateWindow,  METH_NOARGS,
+    "Updates the top-level window if there is one." },
     {NULL, NULL, 0, NULL} // Sentinel
 };
 
