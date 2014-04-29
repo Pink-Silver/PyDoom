@@ -9,6 +9,9 @@
 #include <Python.h>
 #include <cstdlib>
 
+// SDL
+#include "SDL.h"
+
 #include "toplevel.hpp"
 
 int main (int argc, char *argv[])
