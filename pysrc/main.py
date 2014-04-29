@@ -11,7 +11,6 @@ import arguments
 
 def main ():
     print ("=== PyDoom revision {} ===".format (GITVERSION))
-    print ("Command-line arguments:")
     args = arguments.ArgumentParser (argv[1:])
     args.CollectArgs ()
     del args
