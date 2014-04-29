@@ -66,7 +66,7 @@ class ArgumentParser:
         try:
             parsefunc (self, *options)
         except (TypeError, ValueError) as ex:
-            print ("Bad arguments for for option '{}'".format (command))
+            print ("Bad arguments for option '{}'".format (command))
             print ("  Proper use: {}".format (parsefunc.__doc__))
     
     def ParseOpt_iwad (self, iwad):
