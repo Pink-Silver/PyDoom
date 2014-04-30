@@ -5,7 +5,7 @@
 # See the LICENSE file in this program's distribution for details.
 
 import struct
-from utility import measuresize
+from pydoom.utility import measuresize
 import logging
 
 resource_log = logging.getLogger("PyDoom.Resource")
@@ -68,7 +68,7 @@ class WadFile:
                 else:
                     if namespace != self.nsmarkers[direntry.name][1]:
                         resource_log.warning ("Spurious {} found inside {} namespace".format (direntry.name, namespace))
-                        namespace = "global"
+                    namespace = "global"
             
             if direntry.size:
                 self.kind = namespace
