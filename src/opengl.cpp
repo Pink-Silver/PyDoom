@@ -221,6 +221,7 @@ PyObject * PyDoom_GL_FinishDrawing (PyObject *self, PyObject *args)
         Py_RETURN_NONE;
     
     SDL_GL_SwapWindow (topwindow);
+    SDL_PumpEvents ();
     
     Py_RETURN_NONE;
 }
