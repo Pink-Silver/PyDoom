@@ -8,6 +8,7 @@ import logging
 from logging import FileHandler
 
 main_log = logging.getLogger ("PyDoom")
+main_log.setLevel ("INFO")
 main_log.addHandler (FileHandler ("pydoom.log"))
 
 from version import GITVERSION
