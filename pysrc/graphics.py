@@ -73,12 +73,9 @@ class Image:
         colheaders = []
 
         # The headers for each column
-        colheader = 0
-        while colheader < width:
+        for colheader in range (width):
             colheaders.append (struct.unpack_from ("<I", bytebuffer, pos))
             pos += struct.calcsize ("<I")
-
-            colheader += 1
 
         # Okay, so in BOOM's format, if the last row started in the
         # same column is above or at the height last drawn, they'd
@@ -96,8 +93,7 @@ class Image:
         # 256th. This means transparent images that are > 256 in height
         # won't corrupt.
 
-        column = 0
-        while column < width:
+        for column in range (width):
             lastrowstart = -1
             while True:
                 rowstart = struct.unpack_from ("<B", bytebuffer,
@@ -112,8 +108,8 @@ class Image:
 
                 columnlength = struct.unpack_from ("<B", bytebuffer,
                     colheaders[column] + 1)
-                rowpos = 0
-                while rowpos < columnlength:
+
+                for rowpos in range (columnlength):
                     palindex = struct.unpack_from ("<B", bytebuffer,
                         colheaders[column] + 3 + rowpos)
 
@@ -122,8 +118,6 @@ class Image:
                     rowpos += 1
 
                 lastrowstart = rowstart
-
-            column += 1
 
         return image
 
