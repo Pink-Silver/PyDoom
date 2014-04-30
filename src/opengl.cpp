@@ -173,9 +173,18 @@ PyObject * PyDoom_GL_Draw2D (PyObject *self, PyObject *args)
 {
     unsigned int gltex;
     int left, top, width, height;
+    float clip_l, clip_t, clip_w, clip_h;
     
-    if (!PyArg_ParseTuple (args, "I(iiii)", &gltex, &left, &top, &width, &height))
+    if (!PyArg_ParseTuple (args, "I(iiii)|(ffff)", &gltex,
+        &left, &top, &width, &height,
+        &clip_l, &clip_t, &clip_w, &clip_h
+        ))
         return NULL;
+    
+    if (clip_w <= 0)
+        clip_w = 1.0;
+    if (clip_h <= 0)
+        clip_h = 1.0;
     
     glEnable (GL_TEXTURE_2D);
     glEnable (GL_BLEND);
@@ -188,13 +197,13 @@ PyObject * PyDoom_GL_Draw2D (PyObject *self, PyObject *args)
     
     glBindTexture (GL_TEXTURE_2D, gltex);
     glBegin (GL_QUADS);
-    glTexCoord2f (0.0f,0.0f);
+    glTexCoord2f (clip_l,clip_t);
     glVertex2i (left,top);
-    glTexCoord2f (0.0f,1.0f);
+    glTexCoord2f (clip_l,clip_t + clip_h);
     glVertex2i (left,top + height);
-    glTexCoord2f (1.0f,1.0f);
+    glTexCoord2f (clip_l + clip_w,clip_t + clip_h);
     glVertex2i (left + width,top + height);
-    glTexCoord2f (1.0f,0.0f);
+    glTexCoord2f (clip_l + clip_w,clip_t);
     glVertex2i (left + width,top);
     glEnd ();
     

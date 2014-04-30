@@ -40,8 +40,9 @@ def main ():
     titletex = PyDoom_OpenGL.LoadTexture (titlepic)
     stoptime = time () + 30.0
     while time () < stoptime:
+        animtime = 1 - ((stoptime - time ()) / 30)
         PyDoom_OpenGL.BeginDrawing ()
-        PyDoom_OpenGL.Draw2D (titletex, (0, 0, width, height))
+        PyDoom_OpenGL.Draw2D (titletex, (0, 0, width, height), (0.25 - (0.25 * animtime), 0.25 - (0.25 * animtime), 0.5 + (animtime * 0.5), 0.5 + (animtime * 0.5)))
         PyDoom_OpenGL.FinishDrawing ()
-        sleep (0.1)
+        sleep (0.01)
     PyDoom_OpenGL.DestroyWindow ()
