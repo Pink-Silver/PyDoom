@@ -4,9 +4,9 @@
 # This file is covered by the 3-clause BSD license.
 # See the LICENSE file in this program's distribution for details.
 
-import zipfile, glob, os.path
+import zipfile, os.path
+from os import walk
 from sys import argv
-from glob import glob
 
 def main (inpath, outpath):
     inpath  = os.path.normpath (inpath)
@@ -15,16 +15,16 @@ def main (inpath, outpath):
         raise ValueError ("{} does not exist!".format (inpath))
     outfile = os.path.join (outpath, "PyDoom.zip")
     print ("Writing {}...".format (outfile))
-
+    
     with zipfile.ZipFile (outfile, "w") as openedzip:
-        fnames = (i[len(inpath)+1:] for i in glob (os.path.join (inpath, '*.py')))
         total = 0
-
-        for fn in fnames:
-            print ("- Adding {}".format (fn))
-            openedzip.write (os.path.join (inpath, fn), arcname=fn)
-            total += 1
-
+        for dir, subdirs, files in walk (inpath):
+            for file in files:
+                aname = os.path.join (dir, file)[len(inpath)+1:]
+                print ("- Adding {}".format (aname))
+                openedzip.write (os.path.join (dir, file), arcname=aname)
+                total += 1
+    
     print ("{} total file{} written.".format (total, ("s" if total != 1 else "")))
 
 if __name__ == "__main__":
