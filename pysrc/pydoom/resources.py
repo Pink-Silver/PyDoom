@@ -78,16 +78,6 @@ class WadFile:
         if namespace != "global":
             resource_log.warning ("The {} namespace isn't closed".format (namespace))
         
-        for item in self.directory:
-            if item.size <= 0:
-                continue
-            
-            self._file.seek (item.pos)
-            try:
-                item.data = self._file.read (item.size)
-            except MemoryError:
-                resource_log.error ("Ran out of memory trying to allocate {} for the '{}' lump".format (item.name, item.size))
-    
     def __del__ (self):
         self._file.close ()
     
@@ -110,7 +100,7 @@ class WadFile:
         if entry.data is not None:
             return entry.data
         
-        self._file.seek (item.pos)
+        self._file.seek (entry.pos)
         try:
             entry.data = self._file.read (entry.size)
         except MemoryError:
