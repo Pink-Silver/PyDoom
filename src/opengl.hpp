@@ -4,7 +4,11 @@
 // This file is covered by the 3-clause BSD license.
 // See the LICENSE file in this program's distribution for details.
 
-bool InitToplevel (void);
-void QuitToplevel (void);
+#ifndef __OPENGL_HPP__
 
-PyMODINIT_FUNC PyInit_toplevel (void);
+bool InitFramework (void);
+void QuitFramework (void);
+
+PyMODINIT_FUNC PyInit_PyDoom_GL (void);
+
+#endif // __OPENGL_HPP__

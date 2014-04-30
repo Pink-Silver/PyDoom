@@ -4,22 +4,18 @@
 // This file is covered by the 3-clause BSD license.
 // See the LICENSE file in this program's distribution for details.
 
-// Python
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
-#include <cstdlib>
+#include "global.hpp"
+#include "opengl.hpp"
 
 // SDL
 #include "SDL.h"
-
-#include "toplevel.hpp"
 
 int main (int argc, char *argv[])
 {
     // Disable user site-packages; we only want the system-wide libraries.
     putenv ("PYTHONNOUSERSITE=1");
     
-    PyImport_AppendInittab ("toplevel", PyInit_toplevel);
+    PyImport_AppendInittab ("PyDoom_OpenGL",   PyInit_PyDoom_GL);
     
     Py_SetProgramName (L"PyDoom");
     Py_Initialize ();
@@ -45,7 +41,7 @@ int main (int argc, char *argv[])
     }
     
     // Initialize the other underlying subsystems
-    InitToplevel ();
+    InitFramework ();
     
     // Jump into the main program
     PyRun_SimpleString (
@@ -54,7 +50,7 @@ int main (int argc, char *argv[])
     );
     
     // Clean up
-    QuitToplevel ();
+    QuitFramework ();
     Py_Exit (0);
     
     return 0;

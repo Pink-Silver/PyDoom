@@ -7,7 +7,7 @@
 from version import GITVERSION
 from time import sleep
 from sys import argv, path
-import toplevel
+import PyDoom_OpenGL
 import arguments
 
 def main ():
@@ -15,10 +15,10 @@ def main ():
     args = arguments.ArgumentParser (argv[1:])
     args.CollectArgs ()
     del args
-    toplevel.CreateWindow ((640, 480), False)
+    PyDoom_OpenGL.CreateWindow ((640, 480), False)
     sleep (2)
-    toplevel.DestroyWindow ()
+    PyDoom_OpenGL.DestroyWindow ()
     sleep (2)
-    toplevel.CreateWindow ((800, 600), False)
+    PyDoom_OpenGL.CreateWindow ((800, 600), False)
     sleep (2)
-    toplevel.DestroyWindow ()
+    PyDoom_OpenGL.DestroyWindow ()

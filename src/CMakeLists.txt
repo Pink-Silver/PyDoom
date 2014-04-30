@@ -9,12 +9,12 @@ include_directories ("${PYTHON_INCLUDE_DIRS}" "${SDL_INCLUDE_DIR}")
 if (WIN32)
     add_executable (PyDoom WIN32
         main.cpp
-        toplevel.cpp
+        opengl.cpp
     )
 else ()
     add_executable (PyDoom
         main.cpp
-        toplevel.cpp
+        opengl.cpp
     )
 endif ()
 

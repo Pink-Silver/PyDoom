@@ -4,9 +4,7 @@
 // This file is covered by the 3-clause BSD license.
 // See the LICENSE file in this program's distribution for details.
 
-// Python
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
+#include "global.hpp"
 
 // SDL
 #include "SDL.h"
@@ -21,8 +19,13 @@ static SDL_Window *topwindow;
 static SDL_GLContext *glcontext;
 static int topwinwidth, topwinheight;
 
-bool InitToplevel (void)
+bool InitFramework (void)
 {
+    topwindow = NULL;
+    glcontext = NULL;
+    
+    topwinwidth = topwinheight = 0;
+    
     int err = SDL_Init (SDL_INIT_TIMER | SDL_INIT_EVENTS | SDL_INIT_VIDEO);
     if (err)
         return false;
@@ -30,12 +33,14 @@ bool InitToplevel (void)
     return true;
 }
 
-void QuitToplevel (void)
+void QuitFramework (void)
 {
     SDL_Quit ();
 }
 
-PyObject * toplevel_CreateWindow (PyObject *self, PyObject *args)
+// WINDOW FUNCTIONS
+
+PyObject * PyDoom_GL_CreateWindow (PyObject *self, PyObject *args)
 {
     int width, height;
     bool fullscreen;
@@ -78,7 +83,7 @@ PyObject * toplevel_CreateWindow (PyObject *self, PyObject *args)
     Py_RETURN_TRUE;
 }
 
-PyObject * toplevel_DestroyWindow (PyObject *self, PyObject *args)
+PyObject * PyDoom_GL_DestroyWindow (PyObject *self, PyObject *args)
 {
     if (topwindow)
     {
@@ -94,7 +99,7 @@ PyObject * toplevel_DestroyWindow (PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyObject * toplevel_HaveWindow (PyObject *self, PyObject *args)
+PyObject * PyDoom_GL_HaveWindow (PyObject *self, PyObject *args)
 {
     if (!topwindow)
         Py_RETURN_FALSE;
@@ -102,7 +107,9 @@ PyObject * toplevel_HaveWindow (PyObject *self, PyObject *args)
     Py_RETURN_TRUE;
 }
 
-PyObject * toplevel_UpdateWindow (PyObject *self, PyObject *args)
+// DRAWING FUNCTIONS
+
+PyObject * PyDoom_GL_FinishDrawing (PyObject *self, PyObject *args)
 {
     if (!topwindow)
         Py_RETURN_NONE;
@@ -112,31 +119,37 @@ PyObject * toplevel_UpdateWindow (PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyMethodDef toplevel_methods[] = {
-    { "CreateWindow",  toplevel_CreateWindow,  METH_VARARGS,
+// MODULE DEFINITION
+
+static PyMethodDef PyDoom_GL_Methods[] = {
+    // Window handling
+    { "CreateWindow",  PyDoom_GL_CreateWindow,  METH_VARARGS,
     "Creates the top-level window. Returns True if a new window was created, False otherwise." },
-    { "DestroyWindow", toplevel_DestroyWindow, METH_NOARGS,
+    { "DestroyWindow", PyDoom_GL_DestroyWindow, METH_NOARGS,
     "Destroys the top-level window if there is one." },
-    { "HaveWindow",    toplevel_HaveWindow,    METH_NOARGS,
+    { "HaveWindow",    PyDoom_GL_HaveWindow,    METH_NOARGS,
     "Returns True if there's a top-level window, False otherwise." },
-    { "UpdateWindow",  toplevel_UpdateWindow,  METH_NOARGS,
-    "Updates the top-level window if there is one." },
+    
+    // OpenGL drawing
+    { "FinishDrawing", PyDoom_GL_FinishDrawing, METH_NOARGS,
+    "Finishes drawing the OpenGL context and updates the window." },
+    
     {NULL, NULL, 0, NULL} // Sentinel
 };
 
-static struct PyModuleDef toplevel_module = {
+static PyModuleDef PyDoom_GL_Module = {
     PyModuleDef_HEAD_INIT,
-    "toplevel",
-    "PyDoom's toplevel window handling",
+    "PyDoom_OpenGL",
+    "OpenGL rendering context and topmost window control",
     -1,
-    toplevel_methods
+    PyDoom_GL_Methods
 };
 
-PyMODINIT_FUNC PyInit_toplevel (void)
+PyMODINIT_FUNC PyInit_PyDoom_GL (void)
 {
     PyObject *m;
     
-    m = PyModule_Create (&toplevel_module);
+    m = PyModule_Create (&PyDoom_GL_Module);
     if (m == NULL)
         return NULL;
     

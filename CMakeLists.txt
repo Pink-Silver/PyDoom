@@ -40,7 +40,6 @@ configure_file (
 
 # Building
 add_subdirectory (src)
-add_subdirectory (columnrender_src)
 
 # Program zip
 add_custom_target (PyDoom.zip ALL
