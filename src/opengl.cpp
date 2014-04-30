@@ -48,8 +48,7 @@ PyObject * PyDoom_GL_CreateWindow (PyObject *self, PyObject *args)
     if (topwindow) // Return False if we already have a window
         Py_RETURN_FALSE;
 
-    int ok = PyArg_ParseTuple(args, "(ii)p", &width, &height, &fullscreen);
-    if (!ok)
+    if (!PyArg_ParseTuple(args, "(ii)p", &width, &height, &fullscreen))
         return NULL;
     
     int flags = SDL_WINDOW_OPENGL;
@@ -112,45 +111,75 @@ PyObject * PyDoom_GL_HaveWindow (PyObject *self, PyObject *args)
 PyObject * PyDoom_GL_LoadTexture (PyObject *self, PyObject *args)
 {
     PyObject *image;
-    int ok = PyArg_ParseTuple (args, "O", &image);
-    if (!ok)
+    if (!PyArg_ParseTuple (args, "O", &image))
         return NULL;
     
     PyObject *dimensions = PyObject_GetAttrString (image, "dimensions");
     
     if (!dimensions)
+    {
         PyErr_SetString (PyExc_TypeError, "Passed object does not have set dimensions");
+        return NULL;
+    }
     
     int width, height;
     if (!PyArg_ParseTuple (dimensions, "ii", &width, &height)) return NULL;
     
     PyObject *bufferobj = PyObject_CallMethod (image, "GetBuffer", NULL);
     if (!bufferobj)
-        PyErr_SetString (PyExc_TypeError, "Failed to call object's GetBuffer method");
-    
-    Py_buffer buf;
-    
-    int err = PyObject_GetBuffer (bufferobj, &buf, PyBUF_SIMPLE);
-    if (err)
     {
-        PyErr_SetString (PyExc_ValueError, "Could not return a buffer");
+        PyErr_SetString (PyExc_TypeError, "Failed to call object's GetBuffer method");
         return NULL;
     }
     
-    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
+    Py_buffer buf;
+    
+    if (PyObject_GetBuffer (bufferobj, &buf, PyBUF_SIMPLE))
+    {
+        PyErr_SetString (PyExc_ValueError, "Could not retrieve a texture buffer");
+        return NULL;
+    }
+    
     unsigned int gltex;
     glGenTextures (1, &gltex);
     glBindTexture (GL_TEXTURE_2D, gltex);
     
     glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf.buf);
-    glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexEnvi (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    
+    PyBuffer_Release (&buf);
+    
+    PyObject *ret = Py_BuildValue ("I", gltex);
+    
+    return ret;
+}
 
+PyObject * PyDoom_GL_UnloadTexture (PyObject *self, PyObject *args)
+{
+    unsigned int gltex;
+    
+    if (!PyArg_ParseTuple (args, "I", &gltex))
+        return NULL;
+    
+    glDeleteTextures (1, &gltex);
+    
+    Py_RETURN_NONE;
+}
+
+PyObject * PyDoom_GL_Draw2D (PyObject *self, PyObject *args)
+{
+    unsigned int gltex;
+    int left, top, width, height;
+    
+    if (!PyArg_ParseTuple (args, "I(iiii)", &gltex, &left, &top, &width, &height))
+        return NULL;
+    
     glEnable (GL_TEXTURE_2D);
     glEnable (GL_BLEND);
+    glPushMatrix ();
     
     glOrtho (0.0f, 640.0f, 480.0, 0.0, 0.0, 1.0);
     
@@ -160,20 +189,29 @@ PyObject * PyDoom_GL_LoadTexture (PyObject *self, PyObject *args)
     glBindTexture (GL_TEXTURE_2D, gltex);
     glBegin (GL_QUADS);
     glTexCoord2f (0.0f,0.0f);
-    glVertex2i (0,0);
+    glVertex2i (left,top);
     glTexCoord2f (0.0f,1.0f);
-    glVertex2i (0,height);
+    glVertex2i (left,top + height);
     glTexCoord2f (1.0f,1.0f);
-    glVertex2i (width,height);
+    glVertex2i (left + width,top + height);
     glTexCoord2f (1.0f,0.0f);
-    glVertex2i (width,0);
+    glVertex2i (left + width,top);
     glEnd ();
     
+    glPopMatrix ();
     glDisable (GL_BLEND);
     glDisable (GL_TEXTURE_2D);
     
-    PyBuffer_Release (&buf);
+    Py_RETURN_NONE;
+}
 
+PyObject * PyDoom_GL_BeginDrawing (PyObject *self, PyObject *args)
+{
+    if (!topwindow)
+        Py_RETURN_NONE;
+    
+    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    
     Py_RETURN_NONE;
 }
 
@@ -200,7 +238,14 @@ static PyMethodDef PyDoom_GL_Methods[] = {
     
     // OpenGL drawing
     { "LoadTexture",   PyDoom_GL_LoadTexture,   METH_VARARGS,
-    "Test function." },
+    "Saves a texture into OpenGL's video memory. Returns the texture ID." },
+    { "UnloadTexture", PyDoom_GL_UnloadTexture, METH_VARARGS,
+    "Deletes a texture that was previously saved into video memory." },
+    { "Draw2D",        PyDoom_GL_Draw2D,        METH_VARARGS,
+    "Given a texture ID and positional coordinates, draws a single graphic." },
+    
+    { "BeginDrawing",  PyDoom_GL_BeginDrawing,  METH_NOARGS,
+    "Clears the GL buffers and prepares to begin drawing." },
     { "FinishDrawing", PyDoom_GL_FinishDrawing, METH_NOARGS,
     "Finishes drawing the OpenGL context and updates the window." },
     

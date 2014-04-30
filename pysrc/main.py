@@ -19,9 +19,11 @@ def main ():
     del args
     PyDoom_OpenGL.CreateWindow ((640, 480), False)
     doom2 = resources.WadFile ("doom2.wad")
-    i = graphics.MakePalettes (doom2.directory[0].data)[0]
-    j = graphics.Image.LoadDoomGraphic (doom2.directory[612].data, i)
-    PyDoom_OpenGL.LoadTexture (j)
+    palette = graphics.MakePalettes (doom2.directory[0].data)[0]
+    titlepic = graphics.Image.LoadDoomGraphic (doom2.directory[612].data, palette)
+    titletex = PyDoom_OpenGL.LoadTexture (titlepic)
+    PyDoom_OpenGL.BeginDrawing ()
+    PyDoom_OpenGL.Draw2D (titletex, (0, 0, 640, 480))
     PyDoom_OpenGL.FinishDrawing ()
     sleep (5)
     PyDoom_OpenGL.DestroyWindow ()
