@@ -122,7 +122,7 @@ class ArgumentParser:
         "-width screenwidth"
         self.resolution[0] = int (width)
     
-    def ParseOpt_height (self, width):
+    def ParseOpt_height (self, height):
         "-height screenheight"
         self.resolution[1] = int (height)
     

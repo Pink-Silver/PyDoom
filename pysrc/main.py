@@ -23,16 +23,25 @@ def main ():
     main_log.info ("=== PyDoom revision {} ===".format (GITVERSION))
     args = ArgumentParser (argv[1:])
     args.CollectArgs ()
+    width, height = (640, 480)
+    fullscreen = False
+    if args.resolution[0] is not None:
+        width = args.resolution[0]
+    if args.resolution[1] is not None:
+        height = args.resolution[1]
+    if args.fullscreen is not None:
+        fullscreen = args.fullscreen
     del args
+    
     doom2 = WadFile ("doom2.wad")
     palette = MakePalettes (doom2.ReadLump (doom2.FindFirstLump ("playpal")))[0]
     titlepic = Image.LoadDoomGraphic (doom2.ReadLump (doom2.FindFirstLump ("titlepic")), palette)
-    PyDoom_OpenGL.CreateWindow ((640, 480), False)
+    PyDoom_OpenGL.CreateWindow ((width, height), fullscreen)
     titletex = PyDoom_OpenGL.LoadTexture (titlepic)
     stoptime = time () + 30.0
     while time () < stoptime:
         PyDoom_OpenGL.BeginDrawing ()
-        PyDoom_OpenGL.Draw2D (titletex, (0, 0, 640, 480))
+        PyDoom_OpenGL.Draw2D (titletex, (0, 0, width, height))
         PyDoom_OpenGL.FinishDrawing ()
         sleep (0.1)
     PyDoom_OpenGL.DestroyWindow ()
