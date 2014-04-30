@@ -74,7 +74,7 @@ class Image:
 
         # The headers for each column
         for colheader in range (width):
-            colheaders.append (struct.unpack_from ("<I", bytebuffer, pos))
+            colheaders.append (struct.unpack_from ("<I", bytebuffer, pos)[0])
             pos += struct.calcsize ("<I")
 
         # Okay, so in the standard graphic format, if the last row
@@ -92,9 +92,12 @@ class Image:
 
         for column in range (width):
             lastrowstart = -1
+            rowstart = 0
+            byteofs = colheaders[column]
             while True:
                 rowstart = struct.unpack_from ("<B", bytebuffer,
-                    colheaders[column])
+                    byteofs)[0]
+                byteofs += 1
 
                 if rowstart == 255:
                     # No more pieces to draw, go to next column
@@ -104,16 +107,18 @@ class Image:
                     rowstart += lastrowstart
 
                 columnlength = struct.unpack_from ("<B", bytebuffer,
-                    colheaders[column] + 1)
+                    byteofs)[0]
+                byteofs += 2
 
                 for rowpos in range (columnlength):
                     palindex = struct.unpack_from ("<B", bytebuffer,
-                        colheaders[column] + 3 + rowpos)
+                        byteofs)[0]
+                    byteofs += 1
 
                     palcolor = palette.colors[palindex]
-                    image.SetPixel (rowpos, column, palcolor)
-                    rowpos += 1
+                    image.SetPixel (column, rowpos + rowstart, palcolor)
 
+                byteofs += 1
                 lastrowstart = rowstart
 
         return image
@@ -121,9 +126,9 @@ class Image:
     def GetPixel (self, x, y):
         """Retrieves the color of a pixel at the given position."""
         if x < 0 or x >= self.dimensions[0]:
-            raise ValueError ("x is out of the image boundary")
+            raise ValueError ("x is out of the image boundary ({} <> {})".format (x, self.dimensions[0]))
         if y < 0 or y >= self.dimensions[1]:
-            raise ValueError ("y is out of the image boundary")
+            raise ValueError ("y is out of the image boundary ({} <> {})".format (y, self.dimensions[1]))
 
         w = self.dimensions[0]
         pixel = self._buffer[((x*4)+(y*w*4)):((x*4)+(y*w*4))+4]
@@ -133,9 +138,9 @@ class Image:
     def SetPixel (self, x, y, color=None):
         """Sets the color of a pixel at the given position."""
         if x < 0 or x >= self.dimensions[0]:
-            raise ValueError ("x is out of the image boundary")
+            raise ValueError ("x is out of the image boundary ({} <> {})".format (x, self.dimensions[0]))
         if y < 0 or y >= self.dimensions[1]:
-            raise ValueError ("y is out of the image boundary")
+            raise ValueError ("y is out of the image boundary ({} <> {})".format (y, self.dimensions[1]))
 
         w = self.dimensions[0]
         if color is None:

@@ -9,6 +9,8 @@ from time import sleep
 from sys import argv, path
 import PyDoom_OpenGL
 import arguments
+import graphics
+import resources
 
 def main ():
     print ("=== PyDoom revision {} ===".format (GITVERSION))
@@ -16,9 +18,10 @@ def main ():
     args.CollectArgs ()
     del args
     PyDoom_OpenGL.CreateWindow ((640, 480), False)
-    sleep (2)
-    PyDoom_OpenGL.DestroyWindow ()
-    sleep (2)
-    PyDoom_OpenGL.CreateWindow ((800, 600), False)
-    sleep (2)
+    doom2 = resources.WadFile ("doom2.wad")
+    i = graphics.MakePalettes (doom2.directory[0].data)[0]
+    j = graphics.Image.LoadDoomGraphic (doom2.directory[612].data, i)
+    PyDoom_OpenGL.LoadTexture (j)
+    PyDoom_OpenGL.FinishDrawing ()
+    sleep (5)
     PyDoom_OpenGL.DestroyWindow ()

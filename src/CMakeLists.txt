@@ -18,7 +18,7 @@ else ()
     )
 endif ()
 
-target_link_libraries (PyDoom "${PYTHON_LIBRARIES}" "${SDL_LIBRARY}" "${SDLMAIN_LIBRARY}")
+target_link_libraries (PyDoom "${PYTHON_LIBRARIES}" "${SDL_LIBRARY}" "${SDLMAIN_LIBRARY}" "${OPENGL_LIBRARIES}")
 
 install (TARGETS PyDoom DESTINATION ${CMAKE_INSTALL_PREFIX})
 

@@ -109,6 +109,74 @@ PyObject * PyDoom_GL_HaveWindow (PyObject *self, PyObject *args)
 
 // DRAWING FUNCTIONS
 
+PyObject * PyDoom_GL_LoadTexture (PyObject *self, PyObject *args)
+{
+    PyObject *image;
+    int ok = PyArg_ParseTuple (args, "O", &image);
+    if (!ok)
+        return NULL;
+    
+    PyObject *dimensions = PyObject_GetAttrString (image, "dimensions");
+    
+    if (!dimensions)
+        PyErr_SetString (PyExc_TypeError, "Passed object does not have set dimensions");
+    
+    int width, height;
+    if (!PyArg_ParseTuple (dimensions, "ii", &width, &height)) return NULL;
+    
+    PyObject *bufferobj = PyObject_CallMethod (image, "GetBuffer", NULL);
+    if (!bufferobj)
+        PyErr_SetString (PyExc_TypeError, "Failed to call object's GetBuffer method");
+    
+    Py_buffer buf;
+    
+    int err = PyObject_GetBuffer (bufferobj, &buf, PyBUF_SIMPLE);
+    if (err)
+    {
+        PyErr_SetString (PyExc_ValueError, "Could not return a buffer");
+        return NULL;
+    }
+    
+    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    unsigned int gltex;
+    glGenTextures (1, &gltex);
+    glBindTexture (GL_TEXTURE_2D, gltex);
+    
+    glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf.buf);
+    glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glEnable (GL_TEXTURE_2D);
+    glEnable (GL_BLEND);
+    
+    glOrtho (0.0f, 640.0f, 480.0, 0.0, 0.0, 1.0);
+    
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f (1.0,1.0,1.0,1.0);
+    
+    glBindTexture (GL_TEXTURE_2D, gltex);
+    glBegin (GL_QUADS);
+    glTexCoord2f (0.0f,0.0f);
+    glVertex2i (0,0);
+    glTexCoord2f (0.0f,1.0f);
+    glVertex2i (0,height);
+    glTexCoord2f (1.0f,1.0f);
+    glVertex2i (width,height);
+    glTexCoord2f (1.0f,0.0f);
+    glVertex2i (width,0);
+    glEnd ();
+    
+    glDisable (GL_BLEND);
+    glDisable (GL_TEXTURE_2D);
+    
+    PyBuffer_Release (&buf);
+
+    Py_RETURN_NONE;
+}
+
 PyObject * PyDoom_GL_FinishDrawing (PyObject *self, PyObject *args)
 {
     if (!topwindow)
@@ -131,6 +199,8 @@ static PyMethodDef PyDoom_GL_Methods[] = {
     "Returns True if there's a top-level window, False otherwise." },
     
     // OpenGL drawing
+    { "LoadTexture",   PyDoom_GL_LoadTexture,   METH_VARARGS,
+    "Test function." },
     { "FinishDrawing", PyDoom_GL_FinishDrawing, METH_NOARGS,
     "Finishes drawing the OpenGL context and updates the window." },
     
