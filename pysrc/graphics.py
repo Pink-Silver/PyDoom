@@ -79,12 +79,9 @@ class Image:
 
         # Okay, so in BOOM's format, if the last row started in the
         # same column is above or at the height last drawn, they'd
-        # usually be drawn above or on top of the column we just drew.
-
-        # So the tall patch format takes advantage of this! In such a
-        # case, we normally would be drawing above or at the height we
-        # were *just* drawing at (which would be a waste of space since
-        # we're just drawing on top of pixels we *just* drew).
+        # usually be drawn above or on top of the column we just drew
+        # (which would be a waste of space since we're just drawing on
+        # top of pixels we've *just* drawn).
 
         # Instead, what we do is *add* the last offset to our current
         # one, so we're always drawing in new space instead. This gives
