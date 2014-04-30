@@ -5,7 +5,7 @@
 # See the LICENSE file in this program's distribution for details.
 
 import logging
-from logging.handlers import FileHandler
+from logging import FileHandler
 
 main_log = logging.getLogger ("PyDoom")
 main_log.addHandler (FileHandler ("pydoom.log"))
@@ -14,9 +14,9 @@ from version import GITVERSION
 from time import sleep
 from sys import argv, path
 import PyDoom_OpenGL
-from arguments import ArgumentParser
-from graphics import MakePalettes, Image
-from resources import WadFile
+from pydoom.arguments import ArgumentParser
+from pydoom.graphics import MakePalettes, Image
+from pydoom.resources import WadFile
 
 def main ():
     main_log.info ("=== PyDoom revision {} ===".format (GITVERSION))
