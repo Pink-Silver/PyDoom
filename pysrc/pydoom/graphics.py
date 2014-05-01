@@ -6,6 +6,7 @@
 
 import io
 import struct, array
+from PyDoom_OpenGL import UnloadTexture
 
 ##### PALETTES #####
 
@@ -56,6 +57,9 @@ class Image:
         self.dimensions = (width, height)
         self.offsets = (xofs, yofs)
         self._buffer = array.array ('B', b'\x00' * (width * height * 4))
+    
+    def __del__ (self):
+        UnloadTexture (self)
 
     @classmethod
     def LoadDoomGraphic (cls, bytebuffer, palette):

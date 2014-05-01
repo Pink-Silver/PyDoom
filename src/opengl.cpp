@@ -14,6 +14,7 @@
 
 // OpenGL
 #ifdef WIN32
+//#pragma warning( disable : 4507 34 )
 #include <Windows.h>
 #endif
 #include <gl/gl.h>
@@ -155,17 +156,26 @@ PyObject * PyDoom_GL_LoadTexture (PyObject *self, PyObject *args)
     
     PyBuffer_Release (&buf);
     
-    PyObject *ret = Py_BuildValue ("I", gltex);
+    PyObject *texprop = Py_BuildValue ("I", gltex);
+    PyObject_SetAttrString (image, "gltexture", texprop);
     
-    return ret;
+    Py_RETURN_NONE;
 }
 
 PyObject * PyDoom_GL_UnloadTexture (PyObject *self, PyObject *args)
 {
-    unsigned int gltex;
+    PyObject *image;
     
-    if (!PyArg_ParseTuple (args, "I", &gltex))
+    if (!PyArg_ParseTuple (args, "O", &image))
         return NULL;
+    
+    if (!PyObject_HasAttrString (image, "gltexture"))
+        Py_RETURN_NONE;
+    
+    PyObject *glprop = PyObject_GetAttrString (image, "gltexture");
+    
+    unsigned int gltex = PyLong_AsUnsignedLong (glprop);
+    if (PyErr_Occurred ()) return NULL;
     
     glDeleteTextures (1, &gltex);
     
@@ -174,17 +184,41 @@ PyObject * PyDoom_GL_UnloadTexture (PyObject *self, PyObject *args)
 
 PyObject * PyDoom_GL_Draw2D (PyObject *self, PyObject *args)
 {
-    unsigned int gltex;
-    int left, top, width, height;
+    PyObject *image;
+    unsigned int gltex = 0;
+    float left, top, width, height;
     float clip_l, clip_t, clip_w, clip_h;
     float angle;
     
-    if (!PyArg_ParseTuple (args, "I(iiii)|(ffff)f", &gltex,
+    if (!PyArg_ParseTuple (args, "O(ffff)|(ffff)f", &image,
         &left, &top, &width, &height,
         &clip_l, &clip_t, &clip_w, &clip_h,
         &angle
         ))
         return NULL;
+    
+    if (!PyObject_HasAttrString (image, "dimensions"))
+    {
+        PyErr_SetString (PyExc_TypeError, "Passed object is missing image dimensions");
+        return NULL;
+    }
+    
+    PyObject *dimensions = PyObject_GetAttrString (image, "dimensions");
+    float texwidth, texheight;
+    if (!PyArg_ParseTuple (dimensions, "ff", &texwidth, &texheight)) return NULL;
+    
+    if (!PyObject_HasAttrString (image, "gltexture"))
+        PyDoom_GL_LoadTexture (self, Py_BuildValue ("(O)", image));
+    
+    PyObject *glprop = PyObject_GetAttrString (image, "gltexture");
+
+    gltex = PyLong_AsUnsignedLong (glprop);
+    if (PyErr_Occurred ()) return NULL;
+    
+    if (!width)
+        width = texwidth;
+    if (!height)
+        height = texheight;
     
     if (clip_w <= 0)
         clip_w = 1.0;
@@ -212,13 +246,13 @@ PyObject * PyDoom_GL_Draw2D (PyObject *self, PyObject *args)
     
     glBindTexture (GL_TEXTURE_2D, gltex);
     glBegin (GL_QUADS);
-    glTexCoord2f (clip_l,clip_t);
+    glTexCoord2f (clip_l / texwidth, clip_t / texheight);
     glVertex2f (tl_x,tl_y);
-    glTexCoord2f (clip_l + clip_w,clip_t);
+    glTexCoord2f ((clip_l + clip_w) / texwidth, clip_t / texheight);
     glVertex2f (tr_x,tr_y);
-    glTexCoord2f (clip_l + clip_w,clip_t + clip_h);
+    glTexCoord2f ((clip_l + clip_w) / texwidth, (clip_t + clip_h) / texheight);
     glVertex2f (br_x,br_y);
-    glTexCoord2f (clip_l,clip_t + clip_h);
+    glTexCoord2f (clip_l / texwidth, (clip_t + clip_h) / texheight);
     glVertex2f (bl_x,bl_y);
     glEnd ();
     glPopMatrix ();

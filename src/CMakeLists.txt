@@ -6,17 +6,11 @@
 
 include_directories ("${PYTHON_INCLUDE_DIRS}" "${SDL_INCLUDE_DIR}")
 
-if (WIN32)
-    add_executable (PyDoom WIN32
-        main.cpp
-        opengl.cpp
-    )
-else ()
-    add_executable (PyDoom
-        main.cpp
-        opengl.cpp
-    )
-endif ()
+add_executable (PyDoom WIN32
+    main.cpp
+    opengl.cpp
+    py_cpp.cpp
+)
 
 target_link_libraries (PyDoom "${PYTHON_LIBRARIES}" "${SDL_LIBRARY}" "${SDLMAIN_LIBRARY}" "${OPENGL_LIBRARIES}")
 

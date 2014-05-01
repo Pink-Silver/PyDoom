@@ -9,7 +9,7 @@ from logging import FileHandler
 
 main_log = logging.getLogger ("PyDoom")
 main_log.setLevel ("INFO")
-main_log.addHandler (FileHandler ("pydoom.log"))
+main_log.addHandler (FileHandler ("pydoom.log", "w"))
 
 from version import GITVERSION
 from time import time, sleep
@@ -38,12 +38,15 @@ def main ():
     palette = MakePalettes (doom2.ReadLump (doom2.FindFirstLump ("playpal")))[0]
     titlepic = Image.LoadDoomGraphic (doom2.ReadLump (doom2.FindFirstLump ("titlepic")), palette)
     PyDoom_OpenGL.CreateWindow ((width, height), fullscreen)
-    titletex = PyDoom_OpenGL.LoadTexture (titlepic)
     stoptime = time () + 10.0
     while time () < stoptime:
         animtime = 1 - ((stoptime - time ()) / 10)
         PyDoom_OpenGL.BeginDrawing ()
-        PyDoom_OpenGL.Draw2D (titletex, (int ((width-320) * animtime), int ((height-200) * animtime), 320, 200), (0, 0, 1, 1), 360 * animtime)
+        PyDoom_OpenGL.Draw2D (titlepic, (
+            int (-(width/4) * animtime),
+            int (-(height/4) * animtime),
+            int (width + ((width/4)*animtime)),
+            int (height + ((height/4)*animtime))), (0, 0, 320, 200), 15 * animtime)
         PyDoom_OpenGL.FinishDrawing ()
         sleep (0.01)
     PyDoom_OpenGL.DestroyWindow ()
