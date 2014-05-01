@@ -6,6 +6,9 @@
 
 #include "global.hpp"
 
+// Math
+#include <cmath>
+
 // SDL
 #include "SDL.h"
 
@@ -174,10 +177,12 @@ PyObject * PyDoom_GL_Draw2D (PyObject *self, PyObject *args)
     unsigned int gltex;
     int left, top, width, height;
     float clip_l, clip_t, clip_w, clip_h;
+    float angle;
     
-    if (!PyArg_ParseTuple (args, "I(iiii)|(ffff)", &gltex,
+    if (!PyArg_ParseTuple (args, "I(iiii)|(ffff)f", &gltex,
         &left, &top, &width, &height,
-        &clip_l, &clip_t, &clip_w, &clip_h
+        &clip_l, &clip_t, &clip_w, &clip_h,
+        &angle
         ))
         return NULL;
     
@@ -185,6 +190,32 @@ PyObject * PyDoom_GL_Draw2D (PyObject *self, PyObject *args)
         clip_w = 1.0;
     if (clip_h <= 0)
         clip_h = 1.0;
+    
+    float tl_x, tl_y, tr_x, tr_y;
+    float bl_x, bl_y, br_x, br_y;
+    float center_x, center_y;
+    
+    tl_x = left; tl_y = top;           tr_x = left + width; tr_y = top;
+    bl_x = left; bl_y = top + height;  br_x = left + width; br_y = top + height;
+    
+    center_x = left + (float(width)  / 2.0);
+    center_y = top  + (float(height) / 2.0);
+    
+    if (angle)
+    {
+        // Rotate the image to an angle in radians
+        tl_x = center_x + (tl_x - center_x) * cos (angle) - (tl_y - center_y) * sin (angle);
+        tl_y = center_y + (tl_x - center_x) * sin (angle) + (tl_y - center_y) * cos (angle);
+        
+        tr_x = center_x + (tr_x - center_x) * cos (angle) - (tr_y - center_y) * sin (angle);
+        tr_y = center_y + (tr_x - center_x) * sin (angle) + (tr_y - center_y) * cos (angle);
+
+        br_x = center_x + (br_x - center_x) * cos (angle) - (br_y - center_y) * sin (angle);
+        br_y = center_y + (br_x - center_x) * sin (angle) + (br_y - center_y) * cos (angle);
+
+        bl_x = center_x + (bl_x - center_x) * cos (angle) - (bl_y - center_y) * sin (angle);
+        bl_y = center_y + (bl_x - center_x) * sin (angle) + (bl_y - center_y) * cos (angle);
+    }
     
     glEnable (GL_TEXTURE_2D);
     glEnable (GL_BLEND);
@@ -198,13 +229,13 @@ PyObject * PyDoom_GL_Draw2D (PyObject *self, PyObject *args)
     glBindTexture (GL_TEXTURE_2D, gltex);
     glBegin (GL_QUADS);
     glTexCoord2f (clip_l,clip_t);
-    glVertex2i (left,top);
-    glTexCoord2f (clip_l,clip_t + clip_h);
-    glVertex2i (left,top + height);
-    glTexCoord2f (clip_l + clip_w,clip_t + clip_h);
-    glVertex2i (left + width,top + height);
+    glVertex2f (tl_x,tl_y);
     glTexCoord2f (clip_l + clip_w,clip_t);
-    glVertex2i (left + width,top);
+    glVertex2f (tr_x,tr_y);
+    glTexCoord2f (clip_l + clip_w,clip_t + clip_h);
+    glVertex2f (br_x,br_y);
+    glTexCoord2f (clip_l,clip_t + clip_h);
+    glVertex2f (bl_x,bl_y);
     glEnd ();
     
     glPopMatrix ();
