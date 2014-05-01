@@ -219,9 +219,11 @@ PyObject * PyDoom_GL_Draw2D (PyObject *self, PyObject *args)
     
     glEnable (GL_TEXTURE_2D);
     glEnable (GL_BLEND);
-    glPushMatrix ();
+    //glPushMatrix ();
     
-    glOrtho (0.0f, float(topwinwidth), float(topwinheight), 0.0, 0.0, 1.0);
+    glMatrixMode (GL_PROJECTION);
+    glLoadIdentity ();
+    glOrtho (0.0f, float(topwinwidth), float(topwinheight), 0.0, -1.0, 1.0);
     
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glColor4f (1.0,1.0,1.0,1.0);
@@ -238,7 +240,7 @@ PyObject * PyDoom_GL_Draw2D (PyObject *self, PyObject *args)
     glVertex2f (bl_x,bl_y);
     glEnd ();
     
-    glPopMatrix ();
+    //glPopMatrix ();
     glDisable (GL_BLEND);
     glDisable (GL_TEXTURE_2D);
     
