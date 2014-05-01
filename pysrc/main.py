@@ -39,11 +39,11 @@ def main ():
     titlepic = Image.LoadDoomGraphic (doom2.ReadLump (doom2.FindFirstLump ("titlepic")), palette)
     PyDoom_OpenGL.CreateWindow ((width, height), fullscreen)
     titletex = PyDoom_OpenGL.LoadTexture (titlepic)
-    stoptime = time () + 30.0
+    stoptime = time () + 10.0
     while time () < stoptime:
-        animtime = 1 - ((stoptime - time ()) / 30)
+        animtime = 1 - ((stoptime - time ()) / 10)
         PyDoom_OpenGL.BeginDrawing ()
-        PyDoom_OpenGL.Draw2D (titletex, (0, 0, width, height), (0, 0, 1, 1), radians (90 * animtime))
+        PyDoom_OpenGL.Draw2D (titletex, (int ((width-320) * animtime), int ((height-200) * animtime), 320, 200), (0, 0, 1, 1), 360 * animtime)
         PyDoom_OpenGL.FinishDrawing ()
         sleep (0.01)
     PyDoom_OpenGL.DestroyWindow ()

@@ -193,37 +193,19 @@ PyObject * PyDoom_GL_Draw2D (PyObject *self, PyObject *args)
     
     float tl_x, tl_y, tr_x, tr_y;
     float bl_x, bl_y, br_x, br_y;
-    float center_x, center_y;
     
-    tl_x = left; tl_y = top;           tr_x = left + width; tr_y = top;
-    bl_x = left; bl_y = top + height;  br_x = left + width; br_y = top + height;
-    
-    center_x = left + (float(width)  / 2.0);
-    center_y = top  + (float(height) / 2.0);
-    
-    if (angle)
-    {
-        // Rotate the image to an angle in radians
-        tl_x = center_x + (tl_x - center_x) * cos (angle) - (tl_y - center_y) * sin (angle);
-        tl_y = center_y + (tl_x - center_x) * sin (angle) + (tl_y - center_y) * cos (angle);
-        
-        tr_x = center_x + (tr_x - center_x) * cos (angle) - (tr_y - center_y) * sin (angle);
-        tr_y = center_y + (tr_x - center_x) * sin (angle) + (tr_y - center_y) * cos (angle);
-
-        br_x = center_x + (br_x - center_x) * cos (angle) - (br_y - center_y) * sin (angle);
-        br_y = center_y + (br_x - center_x) * sin (angle) + (br_y - center_y) * cos (angle);
-
-        bl_x = center_x + (bl_x - center_x) * cos (angle) - (bl_y - center_y) * sin (angle);
-        bl_y = center_y + (bl_x - center_x) * sin (angle) + (bl_y - center_y) * cos (angle);
-    }
+    tl_x = -(float(width)/2); tl_y = -(float(height)/2);
+    tr_x =  (float(width)/2); tr_y = -(float(height)/2);
+    bl_x = -(float(width)/2); bl_y =  (float(height)/2);
+    br_x =  (float(width)/2); br_y =  (float(height)/2);
     
     glEnable (GL_TEXTURE_2D);
     glEnable (GL_BLEND);
-    //glPushMatrix ();
     
-    glMatrixMode (GL_PROJECTION);
-    glLoadIdentity ();
+    glPushMatrix ();
     glOrtho (0.0f, float(topwinwidth), float(topwinheight), 0.0, -1.0, 1.0);
+    glTranslatef (left+(float(width)/2), top+(float(height)/2), 0);
+    glRotatef (angle, 0, 0, 1);
     
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glColor4f (1.0,1.0,1.0,1.0);
@@ -239,8 +221,8 @@ PyObject * PyDoom_GL_Draw2D (PyObject *self, PyObject *args)
     glTexCoord2f (clip_l,clip_t + clip_h);
     glVertex2f (bl_x,bl_y);
     glEnd ();
+    glPopMatrix ();
     
-    //glPopMatrix ();
     glDisable (GL_BLEND);
     glDisable (GL_TEXTURE_2D);
     
