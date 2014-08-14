@@ -9,6 +9,6 @@
 bool InitFramework (void);
 void QuitFramework (void);
 
-PyMODINIT_FUNC PyInit_PyDoom_GL (void);
+PyObject * PyInit_PyDoom_GL (void);
 
 #endif // __OPENGL_HPP__

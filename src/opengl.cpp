@@ -319,7 +319,7 @@ static PyModuleDef PyDoom_GL_Module = {
     PyDoom_GL_Methods
 };
 
-PyMODINIT_FUNC PyInit_PyDoom_GL (void)
+PyObject * PyInit_PyDoom_GL (void)
 {
     PyObject *m;
     

@@ -7,8 +7,11 @@
 include_directories ("${PYTHON_INCLUDE_DIRS}" "${SDL_INCLUDE_DIR}")
 
 add_executable (PyDoom WIN32
+    global.hpp
     main.cpp
+    opengl.hpp
     opengl.cpp
+    py_cpp.hpp
     py_cpp.cpp
 )
 
