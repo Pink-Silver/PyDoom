@@ -15,7 +15,7 @@ int main (int argc, char *argv[])
     // Disable user site-packages; we only want the system-wide libraries.
     putenv ("PYTHONNOUSERSITE=1");
     
-    PyImport_AppendInittab ("PyDoom_OpenGL",   PyInit_PyDoom_GL);
+    PyImport_AppendInittab ("PyDoom_OpenGL", PyInit_PyDoom_GL);
     
     Py_SetProgramName (L"PyDoom");
     Py_Initialize ();
@@ -45,8 +45,26 @@ int main (int argc, char *argv[])
     
     // Jump into the main program
     PyRun_SimpleString (
-        "import main\n"
-        "main.main ()\n"
+        "import traceback\n"
+        "from tkinter import Tk\n"
+        "from tkinter.messagebox import showerror\n"
+        "import logging\n"
+        "from logging import FileHandler\n"
+
+        "interp = Tk ()\n"
+        "interp.withdraw ()\n"
+        
+        "master_log = logging.getLogger (\"PyDoom\")\n"
+        "master_log.setLevel (\"INFO\")\n"
+        "master_log.addHandler (FileHandler (\"pydoom.log\", \"w\"))\n"
+
+        "try:\n"
+        "    import pydoom.main\n"
+        "    pydoom.main.main ()\n"
+        "except Exception as err:\n"
+        "    exctext = traceback.format_exc ()\n"
+        "    master_log.error (exctext)\n"
+        "    showerror (title=\"PyDoom Error\", parent=interp, message=exctext)\n"
     );
     
     // Clean up

@@ -11,6 +11,7 @@ add_executable (PyDoom WIN32
     main.cpp
     opengl.hpp
     opengl.cpp
+    pydoom.rc
     py_cpp.hpp
     py_cpp.cpp
 )

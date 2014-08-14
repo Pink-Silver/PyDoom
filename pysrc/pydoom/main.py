@@ -11,7 +11,7 @@ main_log = logging.getLogger ("PyDoom")
 main_log.setLevel ("INFO")
 main_log.addHandler (FileHandler ("pydoom.log", "w"))
 
-from version import GITVERSION
+from pydoom.version import GITVERSION
 from time import time, sleep
 from sys import argv, path
 import PyDoom_OpenGL
@@ -42,11 +42,17 @@ def main ():
     while time () < stoptime:
         animtime = 1 - ((stoptime - time ()) / 10)
         PyDoom_OpenGL.BeginDrawing ()
-        PyDoom_OpenGL.Draw2D (titlepic, (
-            int (-(width/4) * animtime),
-            int (-(height/4) * animtime),
-            int (width + ((width/4)*animtime)),
-            int (height + ((height/4)*animtime))), (0, 0, 320, 200), 15 * animtime)
+        PyDoom_OpenGL.Draw2D (
+            titlepic,
+            (
+                -(((width/2)/4)*3*animtime),
+                -(((height/2)/4)*3*animtime),
+                width + ((width/4)*3*animtime),
+                height + ((height/4)*3*animtime)
+            ),
+            (0, 0, 320, 200),
+            15 * animtime
+        )
         PyDoom_OpenGL.FinishDrawing ()
         sleep (0.01)
     PyDoom_OpenGL.DestroyWindow ()

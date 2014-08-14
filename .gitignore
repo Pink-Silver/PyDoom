@@ -71,4 +71,4 @@ ipch/
 *.sdf
 *.opensdf
 *.suo
-pysrc/version.py
+pysrc/pydoom/version.py

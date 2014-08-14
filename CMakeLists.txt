@@ -35,7 +35,7 @@ endif ()
 
 configure_file (
     "${PyDoom_SOURCE_DIR}/src/version.in.py"
-    "${PyDoom_SOURCE_DIR}/pysrc/version.py"
+    "${PyDoom_SOURCE_DIR}/pysrc/pydoom/version.py"
     )
 
 # Building
