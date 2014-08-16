@@ -1,10 +1,6 @@
 PyDoom:
 - A launcher, and the ability to specify IWADs/PWADs to load in it.
 - Configuration file.
-? The ability to specify which main program library to load?
-  Would need to make sure the library has a main.py in it to load.
-- Better error handling. If we hit a Python exception, we should dump it and
-  quit with a non-zero positive return.
 - Take apart a port (Currently looking at PRBoom+) for stuff like rendering
   routines, and use it as a reference for implementing actual logic, once stuff
   is actually loading.
@@ -12,4 +8,4 @@ PyDoom:
 DoomRL Strategy Mod:
 - Saves only occur between floors; Ask the player if they want to save their
   game after the intermission screen.
-- Destructible doors? Would need dynamic map geometry to some extent.
+? Destructible doors. Would need dynamic map geometry to some extent.
