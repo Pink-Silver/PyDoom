@@ -313,7 +313,7 @@ static PyMethodDef PyDoom_GL_Methods[] = {
 
 static PyModuleDef PyDoom_GL_Module = {
     PyModuleDef_HEAD_INIT,
-    "_pydoom_opengl",
+    "pydoom.opengl",
     "OpenGL rendering context and topmost window control",
     -1,
     PyDoom_GL_Methods

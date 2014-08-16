@@ -15,7 +15,7 @@ int main (int argc, char *argv[])
     // Disable user site-packages; we only want the system-wide libraries.
     putenv ("PYTHONNOUSERSITE=1");
     
-    PyImport_AppendInittab ("_pydoom_opengl", PyInit_PyDoom_GL);
+    PyImport_AppendInittab ("pydoom.opengl", PyInit_PyDoom_GL);
     
     Py_SetProgramName (L"PyDoom");
     Py_Initialize ();
