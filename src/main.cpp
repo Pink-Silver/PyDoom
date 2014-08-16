@@ -25,17 +25,17 @@ int main (int argc, char *argv[])
 
     pyargv = (wchar_t **) calloc (pyargc, sizeof (wchar_t *));
 
-    int proglen = strlen (argv[0]);
+    int proglen = strlen (argv[0]) + 1;
     wchar_t *progname = (wchar_t *) calloc (proglen, sizeof (wchar_t));
     mbstowcs (progname, argv[0], proglen);
-    wchar_t *zipname = L"./PyDoom.zip";
+    wchar_t *zipname = L"PyDoom.zip";
     pyargv[0] = progname;
-    pyargv[1] = (wchar_t *) calloc (13, sizeof (wchar_t));
-    memcpy (pyargv[1], zipname, 13 * sizeof (wchar_t));
+    pyargv[1] = (wchar_t *) calloc (11, sizeof (wchar_t));
+    memcpy (pyargv[1], zipname, 11 * sizeof (wchar_t));
 
-    for (int curarg = 2; curarg < argc; ++curarg)
+    for (int curarg = 1; curarg < argc; ++curarg)
     {
-        int oldstrlen = strlen (argv[curarg]);
+        int oldstrlen = strlen (argv[curarg]) + 1;
         wchar_t *newstr = (wchar_t *) calloc (oldstrlen, sizeof (wchar_t));
         if (!newstr) continue; // Ran out of memory for this arg
         if (mbstowcs (newstr, argv[curarg], oldstrlen))

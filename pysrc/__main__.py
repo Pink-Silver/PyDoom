@@ -13,19 +13,17 @@ path.insert (0, "PyDoom.zip")
 del path
 
 from logging import FileHandler
+
+masterlog = logging.getLogger ("PyDoom")
+masterlog.addHandler (FileHandler ("pydoom.log", "w"))
+masterlog.setLevel ("INFO")
+
 from pydoom.arguments import ArgumentParser
 from pydoom.launcher import selectGame
 from pydoom.version import GITVERSION
 from sys import argv, exit
 from tkinter import Tk
 from tkinter.messagebox import showerror
-
-def setupLog ():
-    masterlog = logging.getLogger ("PyDoom")
-    masterlog.addHandler (FileHandler ("pydoom.log", "w"))
-    masterlog.setLevel ("INFO")
-    
-    return masterlog
 
 ## Supported Games ##
 import doom2
@@ -34,25 +32,38 @@ games = [ doom2, doomrlsm ]
 
 def main ():
     global masterlog
-    
+
     masterlog.info ("=== PyDoom revision {} ===".format (GITVERSION))
+    if argv[1:]:
+        masterlog.info ("Command line: {}".format (' '.join (argv[1:])))
 
     args = ArgumentParser (argv[1:])
     args.CollectArgs ()
     width, height = (640, 480)
     fullscreen = False
+    game = None
+    manualgamechoice = False
     if args.resolution[0] is not None:
         width = args.resolution[0]
     if args.resolution[1] is not None:
         height = args.resolution[1]
     if args.fullscreen is not None:
         fullscreen = args.fullscreen
+    if args.game is not None:
+        for thisgame in games:
+            if args.game == thisgame.game_shortname:
+                game = thisgame
     del args
 
-    game = selectGame (games)
-    masterlog.info ("Playing: " + game.game_title)
+    if not game:
+        game = selectGame (games)
+        manualgamechoice = True
+    if not game:
+        masterlog.info ("Chose to cancel out; quitting.")
+        return
 
-masterlog = setupLog ()
+    masterlog.info ("Playing: {}".format (game.game_title))
+
 interp = Tk ()
 interp.withdraw ()
 
