@@ -5,7 +5,7 @@
 // See the LICENSE file in this program's distribution for details.
 
 #include "global.hpp"
-#include "opengl.hpp"
+#include "video.hpp"
 
 // SDL
 #include "SDL.h"
@@ -15,7 +15,7 @@ int main (int argc, char *argv[])
     // Disable user site-packages; we only want the system-wide libraries.
     putenv ("PYTHONNOUSERSITE=1");
     
-    PyImport_AppendInittab ("pydoom.opengl", PyInit_PyDoom_GL);
+    PyImport_AppendInittab ("pydoom.video", PyInit_PyDoom_Video);
     
     Py_SetProgramName (L"PyDoom");
     Py_Initialize ();
@@ -51,7 +51,7 @@ int main (int argc, char *argv[])
     }
     
     // Initialize the other underlying subsystems
-    InitFramework ();
+    InitVideo ();
     
     // Jump into the main program
     int failure = Py_Main (pyargc, pyargv);
@@ -60,7 +60,7 @@ int main (int argc, char *argv[])
         PySys_WriteStderr ("Bad command line!");
     
     // Clean up
-    QuitFramework ();
+    QuitVideo ();
     Py_Exit (failure == 1? 1 : 0);
     
     return 0;

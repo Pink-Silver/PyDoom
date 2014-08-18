@@ -23,7 +23,7 @@ static SDL_Window *topwindow;
 static SDL_GLContext *glcontext;
 static int topwinwidth, topwinheight;
 
-bool InitFramework (void)
+bool InitVideo (void)
 {
     topwindow = NULL;
     glcontext = NULL;
@@ -37,14 +37,14 @@ bool InitFramework (void)
     return true;
 }
 
-void QuitFramework (void)
+void QuitVideo (void)
 {
     SDL_Quit ();
 }
 
 // WINDOW FUNCTIONS
 
-PyObject * PyDoom_GL_CreateWindow (PyObject *self, PyObject *args)
+PyObject * PyDoom_Video_CreateWindow (PyObject *self, PyObject *args)
 {
     int width, height;
     bool fullscreen;
@@ -86,7 +86,7 @@ PyObject * PyDoom_GL_CreateWindow (PyObject *self, PyObject *args)
     Py_RETURN_TRUE;
 }
 
-PyObject * PyDoom_GL_DestroyWindow (PyObject *self, PyObject *args)
+PyObject * PyDoom_Video_DestroyWindow (PyObject *self, PyObject *args)
 {
     if (topwindow)
     {
@@ -102,7 +102,7 @@ PyObject * PyDoom_GL_DestroyWindow (PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyObject * PyDoom_GL_HaveWindow (PyObject *self, PyObject *args)
+PyObject * PyDoom_Video_HaveWindow (PyObject *self, PyObject *args)
 {
     if (!topwindow)
         Py_RETURN_FALSE;
@@ -112,7 +112,7 @@ PyObject * PyDoom_GL_HaveWindow (PyObject *self, PyObject *args)
 
 // DRAWING FUNCTIONS
 
-PyObject * PyDoom_GL_LoadTexture (PyObject *self, PyObject *args)
+PyObject * PyDoom_Video_LoadTexture (PyObject *self, PyObject *args)
 {
     PyObject *image;
     if (!PyArg_ParseTuple (args, "O", &image))
@@ -162,7 +162,7 @@ PyObject * PyDoom_GL_LoadTexture (PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyObject * PyDoom_GL_UnloadTexture (PyObject *self, PyObject *args)
+PyObject * PyDoom_Video_UnloadTexture (PyObject *self, PyObject *args)
 {
     PyObject *image;
     
@@ -182,7 +182,7 @@ PyObject * PyDoom_GL_UnloadTexture (PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyObject * PyDoom_GL_Draw2D (PyObject *self, PyObject *args)
+PyObject * PyDoom_Video_Draw2D (PyObject *self, PyObject *args)
 {
     PyObject *image;
     unsigned int gltex = 0;
@@ -208,7 +208,7 @@ PyObject * PyDoom_GL_Draw2D (PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple (dimensions, "ff", &texwidth, &texheight)) return NULL;
     
     if (!PyObject_HasAttrString (image, "gltexture"))
-        PyDoom_GL_LoadTexture (self, Py_BuildValue ("(O)", image));
+        PyDoom_Video_LoadTexture (self, Py_BuildValue ("(O)", image));
     
     PyObject *glprop = PyObject_GetAttrString (image, "gltexture");
 
@@ -263,7 +263,7 @@ PyObject * PyDoom_GL_Draw2D (PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyObject * PyDoom_GL_BeginDrawing (PyObject *self, PyObject *args)
+PyObject * PyDoom_Video_BeginDrawing (PyObject *self, PyObject *args)
 {
     if (!topwindow)
         Py_RETURN_NONE;
@@ -273,7 +273,7 @@ PyObject * PyDoom_GL_BeginDrawing (PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyObject * PyDoom_GL_FinishDrawing (PyObject *self, PyObject *args)
+PyObject * PyDoom_Video_FinishDrawing (PyObject *self, PyObject *args)
 {
     if (!topwindow)
         Py_RETURN_NONE;
@@ -286,44 +286,44 @@ PyObject * PyDoom_GL_FinishDrawing (PyObject *self, PyObject *args)
 
 // MODULE DEFINITION
 
-static PyMethodDef PyDoom_GL_Methods[] = {
+static PyMethodDef PyDoom_Video_Methods[] = {
     // Window handling
-    { "CreateWindow",  PyDoom_GL_CreateWindow,  METH_VARARGS,
+    { "CreateWindow",  PyDoom_Video_CreateWindow,  METH_VARARGS,
     "Creates the top-level window. Returns True if a new window was created, False otherwise." },
-    { "DestroyWindow", PyDoom_GL_DestroyWindow, METH_NOARGS,
+    { "DestroyWindow", PyDoom_Video_DestroyWindow, METH_NOARGS,
     "Destroys the top-level window if there is one." },
-    { "HaveWindow",    PyDoom_GL_HaveWindow,    METH_NOARGS,
+    { "HaveWindow",    PyDoom_Video_HaveWindow,    METH_NOARGS,
     "Returns True if there's a top-level window, False otherwise." },
     
     // OpenGL drawing
-    { "LoadTexture",   PyDoom_GL_LoadTexture,   METH_VARARGS,
+    { "LoadTexture",   PyDoom_Video_LoadTexture,   METH_VARARGS,
     "Saves a texture into OpenGL's video memory. Returns the texture ID." },
-    { "UnloadTexture", PyDoom_GL_UnloadTexture, METH_VARARGS,
+    { "UnloadTexture", PyDoom_Video_UnloadTexture, METH_VARARGS,
     "Deletes a texture that was previously saved into video memory." },
-    { "Draw2D",        PyDoom_GL_Draw2D,        METH_VARARGS,
+    { "Draw2D",        PyDoom_Video_Draw2D,        METH_VARARGS,
     "Given a texture ID and positional coordinates, draws a single graphic." },
     
-    { "BeginDrawing",  PyDoom_GL_BeginDrawing,  METH_NOARGS,
+    { "BeginDrawing",  PyDoom_Video_BeginDrawing,  METH_NOARGS,
     "Clears the GL buffers and prepares to begin drawing." },
-    { "FinishDrawing", PyDoom_GL_FinishDrawing, METH_NOARGS,
+    { "FinishDrawing", PyDoom_Video_FinishDrawing, METH_NOARGS,
     "Finishes drawing the OpenGL context and updates the window." },
     
     {NULL, NULL, 0, NULL} // Sentinel
 };
 
-static PyModuleDef PyDoom_GL_Module = {
+static PyModuleDef PyDoom_Video_Module = {
     PyModuleDef_HEAD_INIT,
-    "pydoom.opengl",
+    "pydoom.video",
     "OpenGL rendering context and topmost window control",
     -1,
-    PyDoom_GL_Methods
+    PyDoom_Video_Methods
 };
 
-PyObject * PyInit_PyDoom_GL (void)
+PyObject * PyInit_PyDoom_Video (void)
 {
     PyObject *m;
     
-    m = PyModule_Create (&PyDoom_GL_Module);
+    m = PyModule_Create (&PyDoom_Video_Module);
     if (m == NULL)
         return NULL;
     

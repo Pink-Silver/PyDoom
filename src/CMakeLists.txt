@@ -7,13 +7,18 @@
 include_directories ("${PYTHON_INCLUDE_DIRS}" "${SDL_INCLUDE_DIR}")
 
 add_executable (PyDoom WIN32
+    # Globals
     global.hpp
-    main.cpp
-    opengl.hpp
-    opengl.cpp
-    pydoom.rc
     py_cpp.hpp
     py_cpp.cpp
+
+    # Main Program
+    main.cpp
+    pydoom.rc
+
+    # Modules
+    video.hpp
+    video.cpp
 )
 
 target_link_libraries (PyDoom "${PYTHON_LIBRARIES}" "${SDL_LIBRARY}" "${SDLMAIN_LIBRARY}" "${OPENGL_LIBRARIES}")

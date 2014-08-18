@@ -4,11 +4,11 @@
 // This file is covered by the 3-clause BSD license.
 // See the LICENSE file in this program's distribution for details.
 
-#ifndef __OPENGL_HPP__
+#ifndef __VIDEO_HPP__
 
-bool InitFramework (void);
-void QuitFramework (void);
+bool InitVideo (void);
+void QuitVideo (void);
 
-PyObject * PyInit_PyDoom_GL (void);
+PyObject * PyInit_PyDoom_Video (void);
 
-#endif // __OPENGL_HPP__
+#endif // __VIDEO_HPP__
