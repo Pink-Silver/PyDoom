@@ -1,6 +1,5 @@
 PyDoom:
-- A launcher, and the ability to specify IWADs/PWADs to load in it.
-- Configuration file.
+>>> Configuration file.
 - Take apart a port (Currently looking at PRBoom+) for stuff like rendering
   routines, and use it as a reference for implementing actual logic, once stuff
   is actually loading.

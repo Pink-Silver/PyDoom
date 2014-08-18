@@ -12,15 +12,19 @@ from sys import path
 path.insert (0, "PyDoom.zip")
 del path
 
-from logging import FileHandler
+mainlogfile = logging.FileHandler ("pydoom.log", "w")
+mainlogfile.setFormatter (logging.Formatter (style='{',
+    fmt='[{levelname:8s}] ({name:13s}) {message}'))
 
 masterlog = logging.getLogger ("PyDoom")
-masterlog.addHandler (FileHandler ("pydoom.log", "w"))
+masterlog.addHandler (mainlogfile)
 masterlog.setLevel ("INFO")
+
 
 from pydoom.arguments import ArgumentParser
 from pydoom.launcher import selectGame
 from pydoom.version import GITVERSION
+from pydoom.configuration import loadSystemConfig
 from sys import argv, exit
 from tkinter import Tk
 from tkinter.messagebox import showerror
@@ -39,6 +43,9 @@ def main ():
 
     args = ArgumentParser (argv[1:])
     args.CollectArgs ()
+
+    loadSystemConfig ()
+
     width, height = (640, 480)
     fullscreen = False
     game = None
