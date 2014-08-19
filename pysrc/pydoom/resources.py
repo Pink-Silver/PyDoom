@@ -91,6 +91,13 @@ class WadFile:
     
     def FindAllLumps (self, name):
         name = name.upper ()
+        
+        lumps = []
+        for i in range (len (self.directory)):
+            if self.directory[i].name == name:
+                lumps.append (self.directory[i])
+        
+        return lumps
     
     def ReadLump (self, index):
         if self._file.closed:
@@ -104,7 +111,7 @@ class WadFile:
         try:
             entry.data = self._file.read (entry.size)
         except MemoryError:
-            resource_log.error ("Ran out of memory trying to allocate {} for {}.".format (entry.name, measuresize (entry.size)))
+            resource_log.error ("Ran out of memory trying to allocate {} for {}.".format (measuresize (entry.size), entry.name))
             raise
         
         return entry.data
