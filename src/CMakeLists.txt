@@ -6,7 +6,7 @@
 
 include_directories ("${PYTHON_INCLUDE_DIRS}" "${SDL_INCLUDE_DIR}")
 
-add_executable (PyDoom WIN32
+add_executable (PyDoom
     # Globals
     global.hpp
     py_cpp.hpp

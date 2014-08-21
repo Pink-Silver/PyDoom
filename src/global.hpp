@@ -11,4 +11,17 @@
 #include <Python.h>
 #include "py_cpp.hpp"
 
+// Math
+#include <cmath>
+
+// SDL
+#include "SDL.h"
+
+// OpenGL
+#ifdef WIN32
+//#pragma warning( disable : 4507 34 )
+#include <Windows.h>
+#endif
+#include <gl/gl.h>
+
 #endif // __GLOBAL_HPP__

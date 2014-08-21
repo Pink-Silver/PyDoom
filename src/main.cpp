@@ -7,20 +7,29 @@
 #include "global.hpp"
 #include "video.hpp"
 
-// SDL
-#include "SDL.h"
+wchar_t *GetProgramZip ()
+{
+    wchar_t *path = (wchar_t *)calloc (1025, sizeof (wchar_t));
+    GetModuleFileNameW (NULL, path, 1024);
+
+    int r;
+    for (r = 1024; r > 0 && path[r] != L'.'; --r);
+    ++r;
+    path[r++] = L'z';
+    path[r++] = L'i';
+    path[r]   = L'p';
+
+    return path;
+}
 
 int main (int argc, char *argv[])
 {
-    // Disable user site-packages; we only want the system-wide libraries.
-    putenv ("PYTHONNOUSERSITE=1");
-    
-    PyImport_AppendInittab ("pydoom.video", PyInit_PyDoom_Video);
+    PyImport_AppendInittab ("pydoom_video", PyInit_PyDoom_Video);
     
     Py_SetProgramName (L"PyDoom");
     Py_Initialize ();
 
-    int pyargc = 2;
+    int pyargc = 3;
     wchar_t **pyargv = NULL;
 
     pyargv = (wchar_t **) calloc (pyargc, sizeof (wchar_t *));
@@ -28,10 +37,11 @@ int main (int argc, char *argv[])
     int proglen = strlen (argv[0]) + 1;
     wchar_t *progname = (wchar_t *) calloc (proglen, sizeof (wchar_t));
     mbstowcs (progname, argv[0], proglen);
-    wchar_t *zipname = L"PyDoom.zip";
+    wchar_t *zipname = GetProgramZip ();
     pyargv[0] = progname;
-    pyargv[1] = (wchar_t *) calloc (11, sizeof (wchar_t));
-    memcpy (pyargv[1], zipname, 11 * sizeof (wchar_t));
+    pyargv[1] = L"-I";
+    pyargv[2] = (wchar_t *) calloc (1025, sizeof (wchar_t));
+    memcpy (pyargv[2], zipname, 1025 * sizeof (wchar_t));
 
     for (int curarg = 1; curarg < argc; ++curarg)
     {
@@ -49,19 +59,18 @@ int main (int argc, char *argv[])
             pyargv[newindex] = newstr;
         }
     }
-    
+
     // Initialize the other underlying subsystems
     InitVideo ();
     
+    //PySys_SetArgv(pyargc - 1, &pyargv[1]);
+
     // Jump into the main program
     int failure = Py_Main (pyargc, pyargv);
 
-    if (failure == 2)
-        PySys_WriteStderr ("Bad command line!");
-    
     // Clean up
     QuitVideo ();
-    Py_Exit (failure == 1? 1 : 0);
+    Py_Exit (failure);
     
     return 0;
 }

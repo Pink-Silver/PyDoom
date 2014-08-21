@@ -11,4 +11,14 @@ void QuitVideo (void);
 
 PyObject * PyInit_PyDoom_Video (void);
 
+struct PyVideoScreen: PyObject
+{
+public:
+    SDL_Window *win;
+    SDL_GLContext context;
+
+    static PyObject *NewScreen (PyTypeObject *subtype, PyObject *args, PyObject *kwds);
+    static void DestroyScreen (PyVideoScreen *screenptr);
+};
+
 #endif // __VIDEO_HPP__
