@@ -13,7 +13,7 @@ def main (inpath, outpath):
     outpath = os.path.normpath (outpath)
     if not os.path.exists (inpath):
         raise ValueError ("{} does not exist!".format (inpath))
-    outfile = os.path.join (outpath, "PyDoom.zip")
+    outfile = outpath
     print ("Writing {}...".format (outfile))
     
     with zipfile.ZipFile (outfile, "w") as openedzip:

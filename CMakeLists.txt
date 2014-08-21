@@ -43,6 +43,10 @@ add_subdirectory (src)
 
 # Program zip
 add_custom_target (PyDoom.zip ALL
-    ${PYTHON_EXECUTABLE} "${PyDoom_SOURCE_DIR}/MakeProgramZip.py"
-    "${PyDoom_SOURCE_DIR}/pysrc" "${PyDoom_BINARY_DIR}")
-install (FILES "${PyDoom_BINARY_DIR}/PyDoom.zip" DESTINATION ${CMAKE_INSTALL_PREFIX})
+    ${PYTHON_EXECUTABLE} "${PyDoom_SOURCE_DIR}/MakeZip.py"
+    "${PyDoom_SOURCE_DIR}/pysrc" "${PyDoom_BINARY_DIR}/PyDoom.zip")
+add_custom_target (PyDoomGames.zip ALL
+    ${PYTHON_EXECUTABLE} "${PyDoom_SOURCE_DIR}/MakeZip.py"
+    "${PyDoom_SOURCE_DIR}/games" "${PyDoom_BINARY_DIR}/PyDoomGames.zip")
+install (FILES "${PyDoom_BINARY_DIR}/PyDoom.zip"
+    "${PyDoom_BINARY_DIR}/PyDoomGames.zip" DESTINATION ${CMAKE_INSTALL_PREFIX})
