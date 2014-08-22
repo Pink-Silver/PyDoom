@@ -6,10 +6,47 @@
 
 import tkinter
 import tkinter.filedialog
+import zipfile
+from logging import getLogger
+from io import TextIOWrapper
 from sys import argv
 from glob import iglob
 from os.path import join as joinpath
 from os.path import basename as filename
+from os.path import exists as pathexists
+from zipimport import zipimporter
+
+launcherlog = getLogger ("PyDoom.Games")
+
+GAMESFILE = "PyDoomGames.zip"
+def readGames ():
+    global launcherlog
+    
+    gamezipname = joinpath (argv[0].rpartition ('\\')[0], GAMESFILE)
+    games = []
+    
+    if pathexists (gamezipname):
+        gamezip = zipfile.ZipFile (gamezipname)
+        
+        gamelisttxt = None
+        try:
+            gamelisttxt = gamezip.getinfo ("Games.txt")
+        except KeyError:
+            pass
+        
+        if gamelisttxt:
+            importer = zipimporter (gamezipname)
+            with TextIOWrapper (gamezip.open (gamelisttxt)) as textfile:
+                for line in textfile:
+                    try:
+                        games.append (importer.load_module (line.strip ()))
+                        launcherlog.info ("Found {}".format ( line.strip ()))
+                    except ImportError:
+                        launcherlog.warning (
+                            "Unable to load game module '{}'".format (
+                            line.strip ()))
+    
+    return games
 
 class GameSelector (tkinter.Frame):
     def __init__ (self, games, master=None):

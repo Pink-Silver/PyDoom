@@ -22,17 +22,12 @@ masterlog.setLevel ("INFO")
 
 
 from pydoom.arguments import ArgumentParser
-from pydoom.launcher import selectGame
+from pydoom.games import readGames, selectGame
 from pydoom.version import GITVERSION
 from pydoom.configuration import loadSystemConfig
 from sys import argv, exit
 from tkinter import Tk
 from tkinter.messagebox import showerror
-
-## Supported Games ##
-import doom2
-import doomrlsm
-games = [ doom2, doomrlsm ]
 
 def main ():
     global masterlog
@@ -45,6 +40,8 @@ def main ():
     args.CollectArgs ()
 
     loadSystemConfig ()
+    
+    games = readGames ()
 
     width, height = (640, 480)
     fullscreen = False
