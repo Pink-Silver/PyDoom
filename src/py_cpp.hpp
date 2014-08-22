@@ -32,6 +32,9 @@
 **
 */
 
+#ifndef PYCPP_HPP
+#define PYCPP_HPP
+
 #include <exception>
 #include <string.h>
 
@@ -375,3 +378,5 @@ namespace PyCPP
 #define PYCLASSMETHOD_END {NULL, NULL}
 
 }
+
+#endif // PYCPP_HPP

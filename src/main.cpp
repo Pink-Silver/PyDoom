@@ -13,11 +13,23 @@ wchar_t *GetProgramZip ()
     GetModuleFileNameW (NULL, path, 1024);
 
     int r;
-    for (r = 1024; r > 0 && path[r] != L'.'; --r);
+    for (r = 1024; r > 0 && path[r] != L'\\'; --r);
     ++r;
+
+    if (r > 1014)
+        return NULL;
+
+    path[r++] = L'P';
+    path[r++] = L'y';
+    path[r++] = L'D';
+    path[r++] = L'o';
+    path[r++] = L'o';
+    path[r++] = L'm';
+    path[r++] = L'.';
     path[r++] = L'z';
     path[r++] = L'i';
-    path[r]   = L'p';
+    path[r++] = L'p';
+    path[r]   = NULL;
 
     return path;
 }
@@ -38,6 +50,7 @@ int main (int argc, char *argv[])
     wchar_t *progname = (wchar_t *) calloc (proglen, sizeof (wchar_t));
     mbstowcs (progname, argv[0], proglen);
     wchar_t *zipname = GetProgramZip ();
+    if (!zipname) Py_Exit (2);
     pyargv[0] = progname;
     pyargv[1] = L"-I";
     pyargv[2] = (wchar_t *) calloc (1025, sizeof (wchar_t));

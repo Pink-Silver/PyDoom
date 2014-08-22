@@ -13,6 +13,8 @@ bool InitVideo (void)
     if (err)
         return false;
     
+    SDL_DisableScreenSaver ();
+    
     return true;
 }
 
@@ -21,18 +23,24 @@ void QuitVideo (void)
     SDL_Quit ();
 }
 
-////// Class: Screen (PyVideoScreen) //////
+////// Class: Screen //////
 
-static PyTypeObject PyVideoScreenType = {
+PyTypeObject PyDoom_Screen::Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydoom_video.Screen",
-    sizeof (PyVideoScreen),
+    sizeof (PyDoom_Screen),
 };
 
-PyObject *PyVideoScreen::NewScreen (PyTypeObject *subtype, PyObject *args,
+PyMethodDef PyDoom_Screen::Methods[] = {
+    {"bindTexture", (PyCFunction)PyDoom_Screen::python_bindTexture, METH_VARARGS,
+        PyDoc_STR("Binds a graphic name to the OpenGL context.")},
+    {NULL,	NULL},
+};
+
+PyObject *PyDoom_Screen::NewScreen (PyTypeObject *subtype, PyObject *args,
     PyObject *kwds)
 {
-    PyVideoScreen *screenptr;
+    PyDoom_Screen *screenptr;
     const char *wintitle;
     int width, height, x, y;
     int fullscreen, fullwindow;
@@ -53,8 +61,8 @@ PyObject *PyVideoScreen::NewScreen (PyTypeObject *subtype, PyObject *args,
     else if (fullscreen)
         flags |= SDL_WINDOW_FULLSCREEN;
     
-    screenptr = new PyVideoScreen();
-    PyObject_Init (screenptr, &PyVideoScreenType);
+    screenptr = new PyDoom_Screen();
+    PyObject_Init (screenptr, &PyDoom_Screen::Type);
 
     screenptr->win = SDL_CreateWindow (wintitle, x, y, width, height, flags);
     if (!screenptr->win)
@@ -76,12 +84,209 @@ PyObject *PyVideoScreen::NewScreen (PyTypeObject *subtype, PyObject *args,
     return screenptr;
 }
 
-void PyVideoScreen::DestroyScreen (PyVideoScreen *screenptr)
+void PyDoom_Screen::DestroyScreen (PyDoom_Screen *screenptr)
 {
     SDL_GL_DeleteContext (screenptr->context);
     SDL_DestroyWindow (screenptr->win);
 
     delete screenptr;
+}
+
+PyObject *PyDoom_Screen::python_bindTexture (PyDoom_Screen *self, PyObject *args)
+{
+    // Borrowed
+    PyObject *nameobj = NULL;
+    PyObject *imageobj = NULL;
+
+    // New
+    PyObject *widthobj = NULL;
+    PyObject *heightobj = NULL;
+    PyObject *dataobj = NULL;
+    PyObject *lowername = NULL;
+
+    const char *name;
+    Py_buffer buffer;
+    size_t width, height;
+
+    if (!PyArg_ParseTuple (args, "O!O", &PyUnicode_Type, &nameobj, &imageobj))
+        return NULL;
+
+    if (!PyObject_HasAttrString (imageobj, "width"))
+    {
+        PyErr_SetString (PyExc_AttributeError, "image object requires a width");
+        goto exception_cleanup;
+    }
+
+    if (!PyObject_HasAttrString (imageobj, "height"))
+    {
+        PyErr_SetString (PyExc_AttributeError, "image object requires a height");
+        goto exception_cleanup;
+    }
+
+    if (!PyObject_HasAttrString (imageobj, "data"))
+    {
+        PyErr_SetString (PyExc_AttributeError, "image object requires a data buffer");
+        goto exception_cleanup;
+    }
+
+    widthobj  = PyObject_GetAttrString (imageobj, "width");
+    heightobj = PyObject_GetAttrString (imageobj, "height");
+    dataobj   = PyObject_GetAttrString (imageobj, "data");
+
+    if (!widthobj)
+        goto exception_cleanup;
+    if (!heightobj)
+        goto exception_cleanup;
+    if (!dataobj)
+        goto exception_cleanup;
+
+    if (!PyLong_Check (widthobj))
+    {
+        PyErr_SetString (PyExc_AttributeError, "image width is not of type 'int'");
+        goto exception_cleanup;
+    }
+
+    if (!PyLong_Check (heightobj))
+    {
+        PyErr_SetString (PyExc_AttributeError, "image height is not of type 'int'");
+        goto exception_cleanup;
+    }
+
+    if (!PyObject_CheckBuffer (dataobj))
+    {
+        PyErr_SetString (PyExc_AttributeError, "image data does not support buffer protocol");
+        goto exception_cleanup;
+    }
+
+    lowername = PyObject_CallMethod (nameobj, "lower", NULL);
+    if (!lowername)
+        goto exception_cleanup;
+
+    name = PyUnicode_AsUTF8 (lowername);
+    if (!name)
+        goto exception_cleanup;
+
+    width = PyLong_AsSize_t (widthobj);
+    if (PyErr_Occurred ())
+        goto exception_cleanup;
+
+    height = PyLong_AsSize_t (heightobj);
+    if (PyErr_Occurred ())
+        goto exception_cleanup;
+
+    int result = PyObject_GetBuffer (dataobj, &buffer, PyBUF_SIMPLE);
+    if (result)
+        goto exception_cleanup;
+
+    try
+    {
+        self->bindTexture (name, width, height, buffer);
+    }
+    catch (PyDoom_MemoryError)
+    {
+        PyErr_SetString (PyExc_MemoryError, "Ran out of memory attempting to bind texture");
+        goto exception_cleanup;
+    }
+
+    Py_RETURN_NONE;
+
+exception_cleanup:
+    Py_XDECREF (widthobj);
+    Py_XDECREF (heightobj);
+    Py_XDECREF (dataobj);
+    Py_XDECREF (lowername);
+    return NULL;
+}
+
+void PyDoom_Screen::bindTexture (const char *name, int width, int height, Py_buffer data)
+{
+    // Image data should be provided to us as RGBA8.
+
+    SDL_GL_MakeCurrent (this->win, this->context);
+
+    GLuint newtex;
+    size_t index;
+
+    index = this->numtextures++;
+
+    PyDoom_GLTextureMapping *tmp = (PyDoom_GLTextureMapping *) calloc (this->numtextures,
+        sizeof (PyDoom_GLTextureMapping));
+
+    if (!tmp)
+    {
+        --this->numtextures;
+        throw PyDoom_MemoryError();
+    }
+
+    this->textures = tmp;
+
+    glGenTextures (1, &newtex);
+    glBindTexture (GL_TEXTURE_2D, newtex);
+
+    this->textures[index].texturename = name;
+    this->textures[index].texturenum = newtex;
+
+    glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.buf);
+    glTexEnvi (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    PyBuffer_Release (&data);
+}
+
+void PyDoom_Screen::dropTextures (size_t numnames, char **names)
+{
+    SDL_GL_MakeCurrent (this->win, this->context);
+
+    size_t oldcount = this->numtextures;
+
+    for (size_t i = 0; i < numnames; ++i)
+    {
+        const char *thisname = names[i];
+
+        bool found = false;
+        int foundindex = 0;
+        for (size_t j = 0; j < this->numtextures; ++j)
+        {
+            if (!strcmp (thisname, this->textures[j].texturename))
+            {
+                found = true;
+                foundindex = j;
+                break;
+            }
+        }
+
+        if (found)
+        {
+            glDeleteTextures (1, &this->textures[foundindex].texturenum);
+
+            this->textures[foundindex] = this->textures[this->numtextures - 1];
+            --this->numtextures;
+        }
+    }
+
+    if (this->numtextures < oldcount)
+    {
+        this->textures = (PyDoom_GLTextureMapping *) realloc (this->textures,
+            sizeof (PyDoom_GLTextureMapping) * this->numtextures);
+    }
+}
+
+void PyDoom_Screen::clearTextures ()
+{
+    SDL_GL_MakeCurrent (this->win, this->context);
+
+    GLuint *texarray = (GLuint *) calloc (this->numtextures, sizeof (GLuint));
+
+    for (size_t i = 0; i < this->numtextures; ++i)
+        texarray[i] = this->textures[i].texturenum;
+
+    glDeleteTextures (this->numtextures, texarray);
+
+    free (this->textures);
+    this->textures = NULL;
+    this->numtextures = 0;
 }
 
 // MODULE DEFINITION
@@ -100,12 +305,13 @@ static PyModuleDef PyDoom_Video_Module = {
 
 PyObject * PyInit_PyDoom_Video (void)
 {
-    PyVideoScreenType.tp_doc = "A screen with an attached OpenGL context.";
-    PyVideoScreenType.tp_flags = Py_TPFLAGS_DEFAULT;
-    PyVideoScreenType.tp_dealloc = (destructor)PyVideoScreen::DestroyScreen;
-    PyVideoScreenType.tp_new = PyVideoScreen::NewScreen;
+    PyDoom_Screen::Type.tp_doc = "A screen with an attached OpenGL context.";
+    PyDoom_Screen::Type.tp_flags = Py_TPFLAGS_DEFAULT;
+    PyDoom_Screen::Type.tp_dealloc = (destructor)PyDoom_Screen::DestroyScreen;
+    PyDoom_Screen::Type.tp_new = PyDoom_Screen::NewScreen;
+    PyDoom_Screen::Type.tp_methods = PyDoom_Screen::Methods;
     
-    if (PyType_Ready(&PyVideoScreenType) < 0)
+    if (PyType_Ready(&PyDoom_Screen::Type) < 0)
         return NULL;
 
     PyObject *m;
@@ -114,8 +320,8 @@ PyObject * PyInit_PyDoom_Video (void)
     if (m == NULL)
         return NULL;
 
-    Py_INCREF(&PyVideoScreenType);
-    PyModule_AddObject(m, "Screen", (PyObject *)&PyVideoScreenType);
+    Py_INCREF(&PyDoom_Screen::Type);
+    PyModule_AddObject(m, "Screen", (PyObject *)&PyDoom_Screen::Type);
     
     return m;
 }
