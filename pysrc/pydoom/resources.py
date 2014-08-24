@@ -5,10 +5,15 @@
 # See the LICENSE file in this program's distribution for details.
 
 import struct
-from pydoom.utility import measuresize
 import logging
+import zipfile
+import sys
+from pydoom.utility import measuresize
+from io import TextIOWrapper
+from importlib import import_module
+from os.path import join as joinpath
 
-resource_log = logging.getLogger("PyDoom.Resource")
+resourcelog = logging.getLogger("PyDoom.Resource")
 
 def PeekBytes (bytestr):
     """Returns the type of resource archive based on the byte string
@@ -63,11 +68,11 @@ class WadFile:
                 # Change namespace for further entries
                 if self.nsmarkers[direntry.name][0] == True:
                     if namespace != "global":
-                        resource_log.warning ("Spurious {} found inside {} namespace".format (direntry.name, namespace))
+                        resourcelog.warning ("Spurious {} found inside {} namespace".format (direntry.name, namespace))
                     namespace = self.nsmarkers[direntry.name][1]
                 else:
                     if namespace != self.nsmarkers[direntry.name][1]:
-                        resource_log.warning ("Spurious {} found inside {} namespace".format (direntry.name, namespace))
+                        resourcelog.warning ("Spurious {} found inside {} namespace".format (direntry.name, namespace))
                     namespace = "global"
             
             if direntry.size:
@@ -76,7 +81,7 @@ class WadFile:
             self.directory.append (direntry)
         
         if namespace != "global":
-            resource_log.warning ("The {} namespace isn't closed".format (namespace))
+            resourcelog.warning ("The {} namespace isn't closed".format (namespace))
         
     def __del__ (self):
         self._file.close ()
@@ -111,7 +116,54 @@ class WadFile:
         try:
             entry.data = self._file.read (entry.size)
         except MemoryError:
-            resource_log.error ("Ran out of memory trying to allocate {} for {}.".format (measuresize (entry.size), entry.name))
+            resourcelog.error ("Ran out of memory trying to allocate {} for {}.".format (measuresize (entry.size), entry.name))
             raise
         
         return entry.data
+
+class ResourceZip:
+    def __init__ (self, filename):
+        self.filename = filename
+        self._file = open (filename, "rb")
+        self.magic = self._file.read (4)
+        if PeekBytes (self.magic) != "zip":
+            self._file.close ()
+            raise ValueError ("{} is not a valid ZIP file".format (filename))
+        self._file.close ()
+        del self._file
+        self._zip = zipfile.ZipFile (filename)
+        
+        self.game_modules = self.readGames ()
+
+    def readGames (self):
+        games = []
+        
+        gamelisttxt = None
+        try:
+            gamelisttxt = self._zip.getinfo ("Games.txt")
+        except KeyError:
+            pass
+        
+        if gamelisttxt:
+            with TextIOWrapper (self._zip.open (gamelisttxt)) as textfile:
+                for line in textfile:
+                    modname = line.strip ()
+                    try:
+                        games.append (self.importModule (modname))
+                        resourcelog.info ("Found game module: {}".format (
+                            modname))
+                    except ImportError:
+                        resourcelog.warning (
+                            "Unable to load game module: {}".format (modname))
+        
+        return games
+    
+    def importModule (self, modulename):
+        temp_path = sys.path
+        sys.path = [joinpath (self.filename, "scripts")]
+        try:
+            mod = import_module (modulename)
+        finally:
+            # We need to restore sys.path regardless of exceptions
+            sys.path = temp_path
+        return mod

@@ -22,9 +22,10 @@ masterlog.setLevel ("INFO")
 
 
 from pydoom.arguments import ArgumentParser
-from pydoom.games import readGames, selectGame
+from pydoom.games import selectGame
 from pydoom.version import GITVERSION
 from pydoom.configuration import loadSystemConfig
+from pydoom.resources import ResourceZip
 from sys import argv, exit
 from tkinter import Tk
 from tkinter.messagebox import showerror
@@ -40,8 +41,9 @@ def main ():
     args.CollectArgs ()
 
     loadSystemConfig ()
-    
-    games = readGames ()
+
+    mainResource = ResourceZip ("PyDoomResource.zip")
+    games = mainResource.game_modules
 
     width, height = (640, 480)
     fullscreen = False
