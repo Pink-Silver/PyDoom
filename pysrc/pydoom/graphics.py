@@ -52,11 +52,13 @@ def MakePalettes (byteseq):
 ##### IMAGES #####
 
 class Image:
-    """An image that stores its' data in an RGBA8-format linear buffer."""
+    """An image class that stores its' data in an unsigned byte RGBA buffer."""
     def __init__ (self, width, height, xofs=0, yofs=0):
-        self.dimensions = (width, height)
-        self.offsets = (xofs, yofs)
-        self._buffer = array.array ('B', b'\x00' * (width * height * 4))
+        self.width = width
+        self.height = height
+        self.xoffset = xofs
+        self.yoffset = yofs
+        self.data = array.array ('B', b'\x00' * (width * height * 4))
     
     def __del__ (self):
         UnloadTexture (self)
@@ -135,7 +137,7 @@ class Image:
             raise ValueError ("y is out of the image boundary ({} <> {})".format (y, self.dimensions[1]))
 
         w = self.dimensions[0]
-        pixel = self._buffer[((x*4)+(y*w*4)):((x*4)+(y*w*4))+4]
+        pixel = self.data[((x*4)+(y*w*4)):((x*4)+(y*w*4))+4]
         return (int (pixel[0]), int (pixel[1]), int (pixel[2]),
                 int (pixel[3]))
 
@@ -153,12 +155,7 @@ class Image:
         if type (color) is PaletteIndex:
             color = (color.red, color.green, color.blue, 255)
 
-        self._buffer[(x*4)+(y*w*4)+0] = color[0]
-        self._buffer[(x*4)+(y*w*4)+1] = color[1]
-        self._buffer[(x*4)+(y*w*4)+2] = color[2]
-        self._buffer[(x*4)+(y*w*4)+3] = color[3]
-
-    def GetBuffer (self):
-        """Returns the underlying binary buffer/array object for this
-        image."""
-        return self._buffer
+        self.data[(x*4)+(y*w*4)+0] = color[0]
+        self.data[(x*4)+(y*w*4)+1] = color[1]
+        self.data[(x*4)+(y*w*4)+2] = color[2]
+        self.data[(x*4)+(y*w*4)+3] = color[3]
