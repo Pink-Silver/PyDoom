@@ -64,6 +64,16 @@ PyObject *PyDoom_Screen::NewScreen (PyTypeObject *subtype, PyObject *args,
     screenptr = new PyDoom_Screen();
     PyObject_Init (screenptr, &PyDoom_Screen::Type);
 
+    SDL_GL_SetAttribute (SDL_GL_RED_SIZE, 8);
+    SDL_GL_SetAttribute (SDL_GL_GREEN_SIZE, 8);
+    SDL_GL_SetAttribute (SDL_GL_BLUE_SIZE, 8);
+    SDL_GL_SetAttribute (SDL_GL_ALPHA_SIZE, 8);
+    SDL_GL_SetAttribute (SDL_GL_MULTISAMPLEBUFFERS, 1);
+    SDL_GL_SetAttribute (SDL_GL_MULTISAMPLESAMPLES, 2);
+    SDL_GL_SetAttribute (SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute (SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute (SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    
     screenptr->win = SDL_CreateWindow (wintitle, x, y, width, height, flags);
     if (!screenptr->win)
     {
@@ -80,7 +90,11 @@ PyObject *PyDoom_Screen::NewScreen (PyTypeObject *subtype, PyObject *args,
         PyErr_SetString (PyExc_RuntimeError, "Could not create OpenGL context");
         return NULL;
     }
-    
+
+    SDL_GL_MakeCurrent (screenptr->win, screenptr->context);
+
+    screenptr->glGenerateMipmap_ptr = (GL_GenerateMipmap_Func) SDL_GL_GetProcAddress ("glGenerateMipmap");
+
     return screenptr;
 }
 
@@ -202,7 +216,8 @@ void PyDoom_Screen::bindTexture (const char *name, int width, int height, Py_buf
 {
     // Image data should be provided to us as RGBA8.
 
-    SDL_GL_MakeCurrent (this->win, this->context);
+    GLuint lastTexture = 0;
+    glGetIntegerv (GL_TEXTURE_BINDING_2D, (GLint*) &lastTexture);
 
     GLuint newtex;
     size_t index;
@@ -229,10 +244,13 @@ void PyDoom_Screen::bindTexture (const char *name, int width, int height, Py_buf
     glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.buf);
     glTexEnvi (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+    this->glGenerateMipmap_ptr (GL_TEXTURE_2D);
     glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
     PyBuffer_Release (&data);
+    glBindTexture (GL_TEXTURE_2D, lastTexture);
 }
 
 void PyDoom_Screen::dropTextures (size_t numnames, char **names)

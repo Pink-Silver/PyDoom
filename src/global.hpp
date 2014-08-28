@@ -26,14 +26,13 @@ class PyDoom_MemoryError: public std::exception {};
 // Math
 #include <cmath>
 
-// SDL
-#include "SDL.h"
-
-// OpenGL
+// Windows-specific stuff
 #ifdef WIN32
-//#pragma warning( disable : 4507 34 )
 #include <Windows.h>
 #endif
-#include <gl/gl.h>
+
+// SDL
+#include <SDL.h>
+#include <SDL_opengl.h>
 
 #endif // __GLOBAL_HPP__

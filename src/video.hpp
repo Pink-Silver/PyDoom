@@ -7,6 +7,9 @@
 #ifndef VIDEO_HPP
 #define VIDEO_HPP
 
+// GL API stuff
+typedef void (APIENTRY * GL_GenerateMipmap_Func)(unsigned int);
+
 bool InitVideo (void);
 void QuitVideo (void);
 
@@ -23,6 +26,9 @@ class PyDoom_Screen: PyObject
 public:
     SDL_Window *win;
     SDL_GLContext context;
+
+    // GL API stuff
+    GL_GenerateMipmap_Func glGenerateMipmap_ptr;
 
     static PyTypeObject Type;
     static PyMethodDef Methods[];
