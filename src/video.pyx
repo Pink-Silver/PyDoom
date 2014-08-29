@@ -29,7 +29,7 @@ cdef extern from "SDL.h":
         int x, int y, int w, int h, unsigned int flags)
 
 # Force C header generation
-cdef public int pyvideo_dummyfunc ():
+cdef public void pyvideo_dummyfunc ():
     pass
 
 cdef class Screen:
