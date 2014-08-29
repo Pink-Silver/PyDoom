@@ -8,32 +8,35 @@ import traceback
 import logging
 
 # sys.path manipulation
-from sys import path
+from sys import path, stdout
 path.insert (0, "PyDoom.zip")
 del path
 
+mainlogformat = logging.Formatter (style='{',
+    fmt='[{levelname:8s}] ({name:13s}) {message}')
+    
 mainlogfile = logging.FileHandler ("pydoom.log", "w")
-mainlogfile.setFormatter (logging.Formatter (style='{',
-    fmt='[{levelname:8s}] ({name:13s}) {message}'))
+mainlogfile.setFormatter (mainlogformat)
+
+mainlogconsole = logging.StreamHandler (stdout)
+mainlogconsole.setFormatter (mainlogformat)
 
 masterlog = logging.getLogger ("PyDoom")
-masterlog.addHandler (mainlogfile)
 masterlog.setLevel ("INFO")
-
+masterlog.addHandler (mainlogconsole)
+masterlog.addHandler (mainlogfile)
 
 from pydoom.arguments import ArgumentParser
-from pydoom.games import selectGame
 from pydoom.version import GITVERSION
 from pydoom.configuration import loadSystemConfig
 from pydoom.resources import ResourceZip
 from sys import argv, exit
-from tkinter import Tk
-from tkinter.messagebox import showerror
+import pydoom_video
 
 def main ():
     global masterlog
 
-    masterlog.info ("=== PyDoom revision {} ===".format (GITVERSION))
+    masterlog.info ("PyDoom revision {}".format (GITVERSION))
     if argv[1:]:
         masterlog.info ("Command line: {}".format (' '.join (argv[1:])))
 
@@ -48,7 +51,6 @@ def main ():
     width, height = (640, 480)
     fullscreen = False
     game = None
-    manualgamechoice = False
     if args.resolution[0] is not None:
         width = args.resolution[0]
     if args.resolution[1] is not None:
@@ -60,25 +62,18 @@ def main ():
             if args.game == thisgame.game_shortname:
                 game = thisgame
     del args
-
-    if not game:
-        game = selectGame (games)
-        manualgamechoice = True
-    if not game:
-        masterlog.info ("Chose to cancel out; quitting.")
-        return
-
-    masterlog.info ("Playing: {}".format (game.game_title))
-
-interp = Tk ()
-interp.withdraw ()
+    
+    screen = pydoom_video.Screen ("PyDoom", width, height, fullscreen, False)
+    
+    from time import sleep
+    sleep (5)
+    
+    screen.shutdown ()
 
 try:
     main ()
-    interp.destroy ()
     exit (0)
 except Exception as err:
     exctext = traceback.format_exc ()
     masterlog.error (exctext)
-    showerror (parent=interp, title="PyDoom Error", message=exctext)
     exit (1)
