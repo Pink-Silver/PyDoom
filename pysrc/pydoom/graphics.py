@@ -6,7 +6,7 @@
 
 import io
 import struct, array
-from PyDoom_OpenGL import UnloadTexture
+import zlib
 
 ##### PALETTES #####
 
@@ -59,9 +59,39 @@ class Image:
         self.xoffset = xofs
         self.yoffset = yofs
         self.data = array.array ('B', b'\x00' * (width * height * 4))
-    
-    def __del__ (self):
-        UnloadTexture (self)
+
+    def GetPixel (self, x, y):
+        """Retrieves the color of a pixel at the given position."""
+        if x < 0 or x >= self.dimensions[0]:
+            raise ValueError ("x is out of the image boundary ({} <> {})".format (x, self.dimensions[0]))
+        if y < 0 or y >= self.dimensions[1]:
+            raise ValueError ("y is out of the image boundary ({} <> {})".format (y, self.dimensions[1]))
+
+        w = self.dimensions[0]
+        pixel = self.data[((x*4)+(y*w*4)):((x*4)+(y*w*4))+4]
+        return (int (pixel[0]), int (pixel[1]), int (pixel[2]),
+                int (pixel[3]))
+
+    def SetPixel (self, x, y, color=None):
+        """Sets the color of a pixel at the given position."""
+        if x < 0 or x >= self.dimensions[0]:
+            raise ValueError ("x is out of the image boundary ({} <> {})".format (x, self.dimensions[0]))
+        if y < 0 or y >= self.dimensions[1]:
+            raise ValueError ("y is out of the image boundary ({} <> {})".format (y, self.dimensions[1]))
+
+        w = self.dimensions[0]
+        if color is None:
+            color = (0, 0, 0, 0)
+
+        if type (color) is PaletteIndex:
+            color = (color.red, color.green, color.blue, 255)
+
+        self.data[(x*4)+(y*w*4)+0] = color[0]
+        self.data[(x*4)+(y*w*4)+1] = color[1]
+        self.data[(x*4)+(y*w*4)+2] = color[2]
+        self.data[(x*4)+(y*w*4)+3] = color[3]
+
+    ### Image Readers ###
 
     @classmethod
     def LoadDoomGraphic (cls, bytebuffer, palette):
@@ -129,33 +159,14 @@ class Image:
 
         return image
 
-    def GetPixel (self, x, y):
-        """Retrieves the color of a pixel at the given position."""
-        if x < 0 or x >= self.dimensions[0]:
-            raise ValueError ("x is out of the image boundary ({} <> {})".format (x, self.dimensions[0]))
-        if y < 0 or y >= self.dimensions[1]:
-            raise ValueError ("y is out of the image boundary ({} <> {})".format (y, self.dimensions[1]))
+    @classmethod
+    def LoadPNG (cls, bytebuffer):
+        """Loads a Portable Network Graphic."""
 
-        w = self.dimensions[0]
-        pixel = self.data[((x*4)+(y*w*4)):((x*4)+(y*w*4))+4]
-        return (int (pixel[0]), int (pixel[1]), int (pixel[2]),
-                int (pixel[3]))
+        decompressor = zlib.decompressobj ()
 
-    def SetPixel (self, x, y, color=None):
-        """Sets the color of a pixel at the given position."""
-        if x < 0 or x >= self.dimensions[0]:
-            raise ValueError ("x is out of the image boundary ({} <> {})".format (x, self.dimensions[0]))
-        if y < 0 or y >= self.dimensions[1]:
-            raise ValueError ("y is out of the image boundary ({} <> {})".format (y, self.dimensions[1]))
+        if bytebuffer[0:8] != b'\x89PNG\r\n\x1a\n':
+            raise ValueError ("The PNG header is corrupted")
 
-        w = self.dimensions[0]
-        if color is None:
-            color = (0, 0, 0, 0)
-
-        if type (color) is PaletteIndex:
-            color = (color.red, color.green, color.blue, 255)
-
-        self.data[(x*4)+(y*w*4)+0] = color[0]
-        self.data[(x*4)+(y*w*4)+1] = color[1]
-        self.data[(x*4)+(y*w*4)+2] = color[2]
-        self.data[(x*4)+(y*w*4)+3] = color[3]
+        # TODO
+        pass
