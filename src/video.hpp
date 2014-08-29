@@ -30,11 +30,13 @@ public:
     // GL API stuff
     GL_GenerateMipmap_Func glGenerateMipmap_ptr;
 
+    // Python Object
     static PyTypeObject Type;
     static PyMethodDef Methods[];
 
     static PyObject *NewScreen (PyTypeObject *subtype, PyObject *args, PyObject *kwds);
     static void DestroyScreen (PyDoom_Screen *screenptr);
+    void Shutdown ();
 
     // GL Textures
     PyDoom_GLTextureMapping *textures;
@@ -44,6 +46,7 @@ public:
     void dropTextures (size_t numnames, char **names);
     void clearTextures ();
 
+    static PyObject *python_shutdown (PyDoom_Screen *self);
     static PyObject *python_bindTexture (PyDoom_Screen *self, PyObject *args);
     static PyObject *python_dropTextures (PyDoom_Screen *self, PyObject *args);
 };

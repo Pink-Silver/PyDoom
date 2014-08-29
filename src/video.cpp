@@ -34,6 +34,8 @@ PyTypeObject PyDoom_Screen::Type = {
 PyMethodDef PyDoom_Screen::Methods[] = {
     {"bindTexture", (PyCFunction)PyDoom_Screen::python_bindTexture, METH_VARARGS,
         PyDoc_STR("Binds a graphic name to the OpenGL context.")},
+    {"shutdown", (PyCFunction)PyDoom_Screen::python_shutdown, METH_NOARGS,
+        PyDoc_STR("Closes the OpenGL window and releases the context.")},
     {NULL,	NULL},
 };
 
@@ -45,8 +47,10 @@ PyObject *PyDoom_Screen::NewScreen (PyTypeObject *subtype, PyObject *args,
     int width, height, x, y;
     int fullscreen, fullwindow;
 
-    if (!PyArg_ParseTuple (args, "siiiipp", &wintitle, &x, &y, &width, &height,
-        &fullscreen, &fullwindow))
+    x = y = -1;
+
+    if (!PyArg_ParseTuple (args, "siipp|ii", &wintitle, &width, &height,
+        &fullscreen, &fullwindow, &x, &y))
         return NULL;
 
     unsigned int flags = SDL_WINDOW_OPENGL;
@@ -98,13 +102,37 @@ PyObject *PyDoom_Screen::NewScreen (PyTypeObject *subtype, PyObject *args,
     return screenptr;
 }
 
+void PyDoom_Screen::Shutdown ()
+{
+    if (!this->win)
+        return;
+
+    SDL_GL_DeleteContext (this->context);
+    SDL_DestroyWindow (this->win);
+
+    this->context = NULL;
+    this->win = NULL;
+
+    if (this->textures)
+    {
+        free (this->textures);
+        this->textures = NULL;
+        this->numtextures = 0;
+    }
+}
+
 void PyDoom_Screen::DestroyScreen (PyDoom_Screen *screenptr)
 {
-    SDL_GL_DeleteContext (screenptr->context);
-    SDL_DestroyWindow (screenptr->win);
-
+    screenptr->Shutdown ();
     delete screenptr;
 }
+
+PyObject *PyDoom_Screen::python_shutdown (PyDoom_Screen *self)
+{
+    self->Shutdown ();
+
+    Py_RETURN_NONE;
+};
 
 PyObject *PyDoom_Screen::python_bindTexture (PyDoom_Screen *self, PyObject *args)
 {
@@ -242,7 +270,7 @@ void PyDoom_Screen::bindTexture (const char *name, int width, int height, Py_buf
     this->textures[index].texturenum = newtex;
 
     glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.buf);
+    glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.buf);
     glTexEnvi (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
     this->glGenerateMipmap_ptr (GL_TEXTURE_2D);
@@ -255,8 +283,6 @@ void PyDoom_Screen::bindTexture (const char *name, int width, int height, Py_buf
 
 void PyDoom_Screen::dropTextures (size_t numnames, char **names)
 {
-    SDL_GL_MakeCurrent (this->win, this->context);
-
     size_t oldcount = this->numtextures;
 
     for (size_t i = 0; i < numnames; ++i)
