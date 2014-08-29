@@ -15,8 +15,6 @@ add_custom_command (
 add_executable (PyDoom
     # Globals
     global.hpp
-    py_cpp.hpp
-    py_cpp.cpp
 
     # Main Program
     main.cpp
