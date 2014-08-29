@@ -5,12 +5,12 @@
 # See the LICENSE file in this program's distribution for details.
 
 def measuresize (size):
-    sizetable = [
+    sizetable = (
         ("TB", 1024 ** 4),
         ("GB", 1024 ** 3),
         ("MB", 1024 ** 2),
         ("KB", 1024),
-    ]
+    )
     
     suffix = "B"
     for i in range (len (sizetable)):

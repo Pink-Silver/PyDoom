@@ -21,7 +21,7 @@ class PyDoom_MemoryError: public std::exception {};
 // Python
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "py_cpp.hpp"
+//#include "py_cpp.hpp"
 
 // Math
 #include <cmath>

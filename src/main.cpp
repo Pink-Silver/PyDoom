@@ -5,7 +5,7 @@
 // See the LICENSE file in this program's distribution for details.
 
 #include "global.hpp"
-#include "video.hpp"
+#include "video.h"
 
 wchar_t *GetProgramZip ()
 {
@@ -36,7 +36,7 @@ wchar_t *GetProgramZip ()
 
 int main (int argc, char *argv[])
 {
-    PyImport_AppendInittab ("pydoom_video", PyInit_PyDoom_Video);
+    PyImport_AppendInittab ("pydoom_video", PyInit_video);
     
     Py_SetProgramName (L"PyDoom");
     Py_Initialize ();
@@ -72,17 +72,18 @@ int main (int argc, char *argv[])
             pyargv[newindex] = newstr;
         }
     }
-
     // Initialize the other underlying subsystems
-    InitVideo ();
-    
-    //PySys_SetArgv(pyargc - 1, &pyargv[1]);
+    int err = SDL_Init (SDL_INIT_TIMER | SDL_INIT_EVENTS | SDL_INIT_VIDEO);
+    if (err)
+        return 1;
 
+    SDL_DisableScreenSaver ();
+    
     // Jump into the main program
     int failure = Py_Main (pyargc, pyargv);
 
     // Clean up
-    QuitVideo ();
+    SDL_Quit ();
     Py_Exit (failure);
     
     return 0;
