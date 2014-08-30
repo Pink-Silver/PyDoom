@@ -8,7 +8,7 @@
 #define DL_IMPORT(n) n
 #undef PyMODINIT_FUNC
 #define PyMODINIT_FUNC extern "C" PyObject *
-#include "video.h"
+#include "video.hpp"
 
 wchar_t *GetProgramZip ()
 {

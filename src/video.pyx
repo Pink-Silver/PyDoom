@@ -7,6 +7,8 @@
 from sdl.SDL_video cimport *
 from sdl.SDL_error cimport SDL_GetError, SDL_ClearError
 
+from utility cimport makeTexture
+
 cdef class Screen:
     cdef list textures
     cdef SDL_Window * window
@@ -69,3 +71,6 @@ cdef class Screen:
         self.window = NULL
         
         self.textures.clear ()
+    
+    def bindTexture (self, str name, int width, int height, data):
+        pass

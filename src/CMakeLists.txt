@@ -5,7 +5,7 @@
 # See the LICENSE file in this program's distribution for details.
 
 include_directories ("${PYTHON_INCLUDE_DIRS}" "${SDL_INCLUDE_DIR}"
-    "${PyDoom_BINARY_DIR}/src")
+    "${PyDoom_SOURCE_DIR}/src" "${PyDoom_BINARY_DIR}/src")
 
 add_custom_command (
     OUTPUT ${PyDoom_BINARY_DIR}/src/video.cpp
@@ -18,8 +18,12 @@ add_executable (PyDoom
     main.cpp
     pydoom.rc
 
+    utilityfuncs.hpp
+    utilityfuncs.cpp
+
     # Modules
-    video.h
+    video.pyx
+    video.hpp
     ${PyDoom_BINARY_DIR}/src/video.cpp
 )
 
