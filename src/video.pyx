@@ -4,29 +4,7 @@
 # This file is covered by the 3-clause BSD license.
 # See the LICENSE file in this program's distribution for details.
 
-cdef extern from "SDL_opengl.h":
-    const int SDL_GL_RED_SIZE
-    const int SDL_GL_GREEN_SIZE
-    const int SDL_GL_BLUE_SIZE
-    const int SDL_GL_ALPHA_SIZE
-    const int SDL_GL_MULTISAMPLEBUFFERS
-    const int SDL_GL_MULTISAMPLESAMPLES
-    const int SDL_GL_CONTEXT_PROFILE_MASK
-    const int SDL_GL_CONTEXT_PROFILE_CORE
-    const int SDL_GL_CONTEXT_MAJOR_VERSION
-    const int SDL_GL_CONTEXT_MINOR_VERSION
-    
-    int __cdecl SDL_GL_SetAttribute (unsigned int attr, int value)
-
-cdef extern from "SDL.h":
-    const int SDL_WINDOWPOS_CENTERED
-    const int SDL_WINDOW_FULLSCREEN
-    const int SDL_WINDOW_FULLSCREEN_DESKTOP
-    
-    ctypedef struct SDL_Window:
-        pass
-    SDL_Window * __cdecl SDL_CreateWindow (const char *title,
-        int x, int y, int w, int h, unsigned int flags)
+from sdl.SDL_video cimport *
 
 # Force C header generation
 cdef public void pyvideo_dummyfunc ():
@@ -35,6 +13,7 @@ cdef public void pyvideo_dummyfunc ():
 cdef class Screen:
     cdef list textures
     cdef SDL_Window * window
+    cdef SDL_GLContext context
     
     def __init__ (self, str title = "PyDoom", int width = 640, int height = 480,
         bint fullscreen = False, bint fullwindow = False, int x = -1,
