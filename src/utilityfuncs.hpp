@@ -11,7 +11,7 @@
 typedef void (__stdcall *GL_GenerateMipmap_Func)(unsigned int);
 
 extern "C" unsigned int makeTexture (SDL_Window *owner, SDL_GLContext context,
-    int width, int height, Py_buffer data,
+    int width, int height, unsigned char *data,
     GL_GenerateMipmap_Func glGenerateMipmap_ptr);
 
 #endif // UTILFUNCS_HPP

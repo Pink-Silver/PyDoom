@@ -8,7 +8,7 @@
 #include "utilityfuncs.hpp"
 
 unsigned int makeTexture (SDL_Window *owner, SDL_GLContext context, int width,
-    int height, Py_buffer data, GL_GenerateMipmap_Func glGenerateMipmap_ptr)
+    int height, unsigned char *data, GL_GenerateMipmap_Func glGenerateMipmap_ptr)
 {
     // Image data is assumed provided to us as RGBA8.
 
@@ -27,7 +27,7 @@ unsigned int makeTexture (SDL_Window *owner, SDL_GLContext context, int width,
 
     glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
-        GL_UNSIGNED_BYTE, data.buf);
+        GL_UNSIGNED_BYTE, data);
     glTexEnvi (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
     glGenerateMipmap_ptr (GL_TEXTURE_2D);
@@ -35,7 +35,6 @@ unsigned int makeTexture (SDL_Window *owner, SDL_GLContext context, int width,
     glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
         GL_LINEAR_MIPMAP_LINEAR);
 
-    PyBuffer_Release (&data);
     glBindTexture (GL_TEXTURE_2D, lastTexture);
 
     return newtex;

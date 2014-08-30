@@ -10,5 +10,5 @@ cdef extern from "utilityfuncs.hpp":
     ctypedef void (__stdcall *GL_GenerateMipmap_Func)(unsigned int)
 
     unsigned int makeTexture (SDL_Window *owner, SDL_GLContext context,
-        int width, int height, Py_buffer data,
-        GL_GenerateMipmap_Func glGenerateMipmap_ptr)
+        int width, int height, unsigned char *data,
+        GL_GenerateMipmap_Func glGenerateMipmap_ptr) except 0
