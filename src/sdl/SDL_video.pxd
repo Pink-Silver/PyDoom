@@ -22,7 +22,6 @@
 #
 # Header file for SDL video functions.
 
-#include "SDL_stdinc.h"
 #include "SDL_pixels.h"
 #include "SDL_rect.h"
 #include "SDL_surface.h"
@@ -37,8 +36,7 @@ cdef extern from "SDL_video.h":
         int refresh_rate # refresh rate (or zero for unspecified)
         void *driverdata # driver-specific data, initialize to 0
 
-    cdef struct SDL_Window:
-        pass
+    cdef struct SDL_Window
     
     enum SDL_WindowFlags:
         SDL_WINDOW_FULLSCREEN       # fullscreen window

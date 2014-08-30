@@ -6,10 +6,6 @@
 
 from sdl.SDL_video cimport *
 
-# Force C header generation
-cdef public void pyvideo_dummyfunc ():
-    pass
-
 cdef class Screen:
     cdef list textures
     cdef SDL_Window * window
@@ -32,7 +28,7 @@ cdef class Screen:
         SDL_GL_SetAttribute (SDL_GL_CONTEXT_PROFILE_MASK,
             SDL_GL_CONTEXT_PROFILE_CORE)
         
-        cdef int flags = 0
+        cdef int flags = SDL_WINDOW_OPENGL
         
         if x < 0:
             x = SDL_WINDOWPOS_CENTERED
@@ -50,6 +46,11 @@ cdef class Screen:
         
         if self.window == NULL:
             raise RuntimeError ("Could not create SDL window")
+        
+        self.context = SDL_GL_CreateContext (self.window)
+        
+        if self.context == NULL:
+            raise RuntimeError ("Could not create OpenGL context")
 
     def shutdown (self):
         self.textures.clear ()

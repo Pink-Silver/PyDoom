@@ -8,20 +8,18 @@ include_directories ("${PYTHON_INCLUDE_DIRS}" "${SDL_INCLUDE_DIR}"
     "${PyDoom_BINARY_DIR}/src")
 
 add_custom_command (
-    OUTPUT ${PyDoom_BINARY_DIR}/src/video.cpp ${PyDoom_BINARY_DIR}/src/video.h
+    OUTPUT ${PyDoom_BINARY_DIR}/src/video.cpp
     COMMAND Cython --cplus -3 -o ${PyDoom_BINARY_DIR}/src/video.cpp ${PyDoom_SOURCE_DIR}/src/video.pyx
 )
 
 add_executable (PyDoom
-    # Globals
-    global.hpp
-
     # Main Program
+    global.hpp
     main.cpp
     pydoom.rc
 
     # Modules
-    ${PyDoom_BINARY_DIR}/src/video.h
+    video.h
     ${PyDoom_BINARY_DIR}/src/video.cpp
 )
 
