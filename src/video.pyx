@@ -17,7 +17,7 @@ cdef class ImageSurface:
     cdef unsigned char *data
     
     def __init__ (self, int width, int height):
-        if self.width < 1 or self.height < 1:
+        if width < 1 or height < 1:
             raise ValueError ("Image surface must have a valid width and height")
         
         self.width = width

@@ -12,10 +12,13 @@ unsigned int makeTexture (SDL_Window *owner, SDL_GLContext context, int width,
 {
     // Image data is assumed provided to us as RGBA8.
 
-    int success = SDL_GL_MakeCurrent (owner, context);
+    int failure = SDL_GL_MakeCurrent (owner, context);
 
-    if (!success)
+    if (failure)
+    {
+        PyErr_SetString (PyExc_RuntimeError, "Could not set the GL context");
         return 0;
+    }
 
     GLuint lastTexture = 0;
     glGetIntegerv (GL_TEXTURE_BINDING_2D, (GLint*) &lastTexture);

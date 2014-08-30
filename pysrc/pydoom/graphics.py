@@ -4,6 +4,7 @@
 # This file is covered by the 3-clause BSD license.
 # See the LICENSE file in this program's distribution for details.
 
+from pydoom_video import ImageSurface
 import io
 import struct, array
 import zlib
@@ -58,19 +59,11 @@ class Image:
         self.height = height
         self.xoffset = xofs
         self.yoffset = yofs
-        self.data = array.array ('B', b'\x00' * (width * height * 4))
+        self.data = ImageSurface (width, height)
 
     def GetPixel (self, x, y):
         """Retrieves the color of a pixel at the given position."""
-        if x < 0 or x >= self.dimensions[0]:
-            raise ValueError ("x is out of the image boundary ({} <> {})".format (x, self.dimensions[0]))
-        if y < 0 or y >= self.dimensions[1]:
-            raise ValueError ("y is out of the image boundary ({} <> {})".format (y, self.dimensions[1]))
-
-        w = self.dimensions[0]
-        pixel = self.data[((x*4)+(y*w*4)):((x*4)+(y*w*4))+4]
-        return (int (pixel[0]), int (pixel[1]), int (pixel[2]),
-                int (pixel[3]))
+        return self.data.getPixel (x, y)
 
     def SetPixel (self, x, y, color=None):
         """Sets the color of a pixel at the given position."""
@@ -86,10 +79,7 @@ class Image:
         if type (color) is PaletteIndex:
             color = (color.red, color.green, color.blue, 255)
 
-        self.data[(x*4)+(y*w*4)+0] = color[0]
-        self.data[(x*4)+(y*w*4)+1] = color[1]
-        self.data[(x*4)+(y*w*4)+2] = color[2]
-        self.data[(x*4)+(y*w*4)+3] = color[3]
+        self.data.setPixel (x, y, color[0], color[1], color[2], color[3])
 
     ### Image Readers ###
 
