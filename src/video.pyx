@@ -5,6 +5,7 @@
 # See the LICENSE file in this program's distribution for details.
 
 from sdl.SDL_video cimport *
+from sdl.SDL_error cimport SDL_GetError, SDL_ClearError
 
 cdef class Screen:
     cdef list textures
@@ -36,21 +37,35 @@ cdef class Screen:
             y = SDL_WINDOWPOS_CENTERED
         
         if fullscreen:
-            flags &= SDL_WINDOW_FULLSCREEN
+            flags |= SDL_WINDOW_FULLSCREEN
         elif fullwindow:
-            flags &= SDL_WINDOW_FULLSCREEN_DESKTOP
+            flags |= SDL_WINDOW_FULLSCREEN_DESKTOP
         
         enctitle = title.encode ('utf-8')
-        self.window = SDL_CreateWindow (enctitle, x, y, width, height, 0)
+        self.window = SDL_CreateWindow (enctitle, x, y, width, height, flags)
         del enctitle
         
         if self.window == NULL:
-            raise RuntimeError ("Could not create SDL window")
+            errmsg = SDL_GetError ()
+            SDL_ClearError ()
+            errmsg = errmsg.decode ('utf-8')
+            raise RuntimeError ("Could not create SDL window: {}".format (errmsg))
         
         self.context = SDL_GL_CreateContext (self.window)
         
         if self.context == NULL:
-            raise RuntimeError ("Could not create OpenGL context")
+            errmsg = SDL_GetError ()
+            SDL_ClearError ()
+            errmsg = errmsg.decode ('utf-8')
+            raise RuntimeError ("Could not create OpenGL context: {}".format (errmsg))
 
+    def __del__ (self):
+        self.shutdown ()
+    
     def shutdown (self):
+        SDL_GL_DeleteContext (self.context)
+        SDL_DestroyWindow (self.window)
+        self.context = NULL
+        self.window = NULL
+        
         self.textures.clear ()
