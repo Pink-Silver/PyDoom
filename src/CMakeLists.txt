@@ -23,7 +23,6 @@ add_executable (PyDoom
 
     # Modules
     video.pyx
-    video.hpp
     ${PyDoom_BINARY_DIR}/src/video.cpp
 )
 

@@ -23,6 +23,9 @@ class PyDoom_MemoryError: public std::exception {};
 #include <Python.h>
 //#include "py_cpp.hpp"
 
+// Modules
+extern "C" PyObject *PyInit_video ();
+
 // Math
 #include <cmath>
 
