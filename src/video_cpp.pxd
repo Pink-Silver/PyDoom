@@ -14,3 +14,5 @@ cdef extern from "video_cpp.hpp":
         void Shutdown ()
         int BindTexture (string name, int width, int height,
             const unsigned char *data)
+        void DropTexture (string name)
+        void ClearTextures ()

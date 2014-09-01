@@ -5,7 +5,6 @@
 # See the LICENSE file in this program's distribution for details.
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
-
 from video_cpp cimport CScreen
 
 cdef class ImageSurface:
@@ -86,3 +85,11 @@ cdef class Screen:
 
         if (failure == 1):
             raise RuntimeError ("Could not make OpenGL context current")
+    
+    def DropTextures (self, list names):
+        for tex in names:
+            texenc = tex.encode ("utf-8")
+            self.ptr.DropTexture (texenc)
+
+    def ClearTextures (self):
+        self.ptr.ClearTextures ()

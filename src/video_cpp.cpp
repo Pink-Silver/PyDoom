@@ -37,43 +37,43 @@ CScreen::CScreen (std::string name, int width, int height, int fullscreen,
         flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
     }
     
-    this->window = SDL_CreateWindow (name.c_str (), x, y, width, height, flags);
+    window = SDL_CreateWindow (name.c_str (), x, y, width, height, flags);
     
-    if (!this->window)
+    if (!window)
     {
         const char *err = SDL_GetError ();
         SDL_ClearError ();
         throw std::runtime_error (err);
     }
     
-    this->context = SDL_GL_CreateContext (this->window);
+    context = SDL_GL_CreateContext (window);
     
-    if (!this->context)
+    if (!context)
     {
         const char *err = SDL_GetError ();
         SDL_ClearError ();
         throw std::runtime_error (err);
     }
     
-    this->glGenerateMipmap_ptr = (GL_GenerateMipmap_Func) SDL_GL_GetProcAddress ("glGenerateMipmap");
+    glGenerateMipmap_ptr = (GL_GenerateMipmap_Func) SDL_GL_GetProcAddress ("glGenerateMipmap");
     
-    if (!this->glGenerateMipmap_ptr)
+    if (!glGenerateMipmap_ptr)
         throw std::runtime_error ("Could not find the glGenerateMipmap function");
 }
 
 CScreen::~CScreen ()
 {
-    this->Shutdown ();
+    Shutdown ();
 }
 
 void CScreen::Shutdown ()
 {
-    if (this->window == NULL) return;
+    if (window == NULL) return;
     
-    SDL_GL_DeleteContext (this->context);
-    SDL_DestroyWindow (this->window);
-    this->context = NULL;
-    this->window = NULL;
+    SDL_GL_DeleteContext (context);
+    SDL_DestroyWindow (window);
+    context = NULL;
+    window = NULL;
 }
 
 int CScreen::BindTexture (std::string name, int width, int height,
@@ -81,7 +81,7 @@ int CScreen::BindTexture (std::string name, int width, int height,
 {
     // Image data is assumed provided to us as RGBA8.
 
-    int failure = SDL_GL_MakeCurrent (this->window, this->context);
+    int failure = SDL_GL_MakeCurrent (window, context);
 
     if (failure)
         return 1;
@@ -102,7 +102,7 @@ int CScreen::BindTexture (std::string name, int width, int height,
         GL_UNSIGNED_BYTE, data);
     glTexEnvi (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-    this->glGenerateMipmap_ptr (GL_TEXTURE_2D);
+    glGenerateMipmap_ptr (GL_TEXTURE_2D);
     glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
         GL_LINEAR_MIPMAP_LINEAR);
@@ -112,4 +112,20 @@ int CScreen::BindTexture (std::string name, int width, int height,
     glBindTexture (GL_TEXTURE_2D, lastTexture);
 
     return 0;
+}
+
+void CScreen::DropTexture (std::string name)
+{
+    if (!textures.count (name)) return;
+    glDeleteTextures (1, &textures[name]);
+    textures.erase (name);
+}
+
+void CScreen::ClearTextures ()
+{
+    for (auto iter = textures.begin (); iter != textures.end (); ++iter)
+    {
+        glDeleteTextures (1, &iter->second);
+    }
+    textures.clear ();
 }

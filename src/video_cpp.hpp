@@ -27,6 +27,8 @@ public:
     void Shutdown ();
     int BindTexture (std::string name, int width, int height,
         const unsigned char *data);
+    void DropTexture (std::string name);
+    void ClearTextures ();
 };
 
 #endif // VIDEO_HPP
