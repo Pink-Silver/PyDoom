@@ -81,11 +81,8 @@ int CScreen::BindTexture (std::string name, int width, int height,
 {
     // Image data is assumed provided to us as RGBA8.
 
-    int failure = SDL_GL_MakeCurrent (window, context);
+    SDL_GL_MakeCurrent (window, context);
 
-    if (failure)
-        return 1;
-    
     if (textures.count (name) > 0)
         return 2;
 
@@ -117,15 +114,29 @@ int CScreen::BindTexture (std::string name, int width, int height,
 void CScreen::DropTexture (std::string name)
 {
     if (!textures.count (name)) return;
+
+    SDL_GL_MakeCurrent (window, context);
     glDeleteTextures (1, &textures[name]);
     textures.erase (name);
 }
 
 void CScreen::ClearTextures ()
 {
+    SDL_GL_MakeCurrent (window, context);
     for (auto iter = textures.begin (); iter != textures.end (); ++iter)
     {
         glDeleteTextures (1, &iter->second);
     }
     textures.clear ();
+}
+
+void CScreen::DrawClear ()
+{
+    SDL_GL_MakeCurrent (window, context);
+    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+}
+
+void CScreen::DrawSwapBuffer ()
+{
+    SDL_GL_SwapWindow (window);
 }

@@ -29,6 +29,10 @@ public:
         const unsigned char *data);
     void DropTexture (std::string name);
     void ClearTextures ();
+    
+    // Drawing
+    void DrawClear ();
+    void DrawSwapBuffer ();
 };
 
 #endif // VIDEO_HPP
