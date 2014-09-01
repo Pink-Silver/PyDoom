@@ -11,12 +11,12 @@
     #pragma warning(disable: 4996) // blah blah "sprintf is unsafe USE OUR WINDOWS-SPECIFIC FUNCTIONS INSTEAD"
 #endif
 
+// Strings
+#include <string>
+
 // Exceptions used in various places
 #include <exception>
 #include <stdexcept>
-
-class PyDoom_NoBufferError: public std::exception {};
-class PyDoom_MemoryError: public std::exception {};
 
 // Python
 #define PY_SSIZE_T_CLEAN
@@ -24,7 +24,7 @@ class PyDoom_MemoryError: public std::exception {};
 //#include "py_cpp.hpp"
 
 // Modules
-extern "C" PyObject *PyInit_video ();
+PyMODINIT_FUNC PyInit_video ();
 
 // Math
 #include <cmath>

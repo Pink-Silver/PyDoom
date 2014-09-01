@@ -4,14 +4,27 @@
 // This file is covered by the 3-clause BSD license.
 // See the LICENSE file in this program's distribution for details.
 
-#ifndef UTILFUNCS_HPP
-#define UTILFUNCS_HPP
+#ifndef VIDEO_HPP
+#define VIDEO_HPP
+
+#include "global.hpp"
+#include <map>
 
 // GL API stuff
-typedef void (__stdcall *GL_GenerateMipmap_Func)(unsigned int);
+typedef void (APIENTRY *GL_GenerateMipmap_Func)(GLuint);
 
-extern "C" unsigned int makeTexture (SDL_Window *owner, SDL_GLContext context,
-    int width, int height, unsigned char *data,
-    GL_GenerateMipmap_Func glGenerateMipmap_ptr);
+class CScreen
+{
+    std::map<std::string, GLuint> textures;
+    SDL_Window *window;
+    SDL_GLContext context;
+    GL_GenerateMipmap_Func glGenerateMipmap_ptr;
+public:
+    CScreen (std::string name, int width, int height, int fullscreen,
+        int fullwindow, int display, int x, int y);
+    ~CScreen ();
+    
+    void Shutdown ();
+};
 
-#endif // UTILFUNCS_HPP
+#endif // VIDEO_HPP
