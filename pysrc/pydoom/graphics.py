@@ -9,6 +9,20 @@ import io
 import struct, array
 import zlib
 
+def PackColor (red, green, blue, alpha):
+    x =   alpha & 0xFF
+    x += (blue  & 0xFF) << 8
+    x += (green & 0xFF) << 16
+    x += (red   & 0xFF) << 24
+    return x
+
+def UnpackColor (color):
+    red   = (color << 24) & 0xFF
+    green = (color << 16) & 0xFF
+    blue  = (color <<  8) & 0xFF
+    alpha =  color        & 0xFF
+    return (red, green, blue, alpha)
+
 ##### PALETTES #####
 
 class PaletteIndex:
@@ -63,7 +77,7 @@ class Image:
 
     def GetPixel (self, x, y):
         """Retrieves the color of a pixel at the given position."""
-        return self.data.getPixel (x, y)
+        return UnpackColor (self.data.getPixel (x, y))
 
     def SetPixel (self, x, y, color=None):
         """Sets the color of a pixel at the given position."""
@@ -79,7 +93,7 @@ class Image:
         if type (color) is PaletteIndex:
             color = (color.red, color.green, color.blue, 255)
 
-        self.data.setPixel (x, y, color[0], color[1], color[2], color[3])
+        self.data.setPixel (x, y, PackColor (*color))
 
     ### Image Readers ###
 
