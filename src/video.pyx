@@ -77,3 +77,12 @@ cdef class Screen:
     
     def Shutdown (self):
         self.ptr.Shutdown ()
+    
+    def BindTexture (self, ImageSurface image):
+        encname = image.name.encode ("utf-8")
+        
+        cdef int failure = self.ptr.BindTexture (encname, image.width,
+            image.height, image.data)
+
+        if (failure == 1):
+            raise RuntimeError ("Could not make OpenGL context current")

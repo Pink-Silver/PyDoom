@@ -25,6 +25,8 @@ public:
     ~CScreen ();
     
     void Shutdown ();
+    int BindTexture (std::string name, int width, int height,
+        const unsigned char *data);
 };
 
 #endif // VIDEO_HPP

@@ -10,4 +10,7 @@ cdef extern from "video_cpp.hpp":
     cdef cppclass CScreen:
         CScreen (string name, int width, int height, int fullscreen,
         int fullwindow, int display, int x, int y) except +
+        
         void Shutdown ()
+        int BindTexture (string name, int width, int height,
+            const unsigned char *data)
