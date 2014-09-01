@@ -18,8 +18,8 @@ add_executable (PyDoom
     main.cpp
     pydoom.rc
 
-    utilityfuncs.hpp
-    utilityfuncs.cpp
+    video_cpp.hpp
+    video_cpp.cpp
 
     # Modules
     video.pyx
