@@ -78,7 +78,7 @@ cdef class Screen:
         self.ptr.Shutdown ()
     
     def BindTexture (self, ImageSurface image):
-        encname = image.name.encode ("utf-8")
+        encname = image.name.lower ().encode ("utf-8")
         
         cdef int failure = self.ptr.BindTexture (encname, image.width,
             image.height, image.data)
@@ -88,7 +88,7 @@ cdef class Screen:
     
     def DropTextures (self, list names):
         for tex in names:
-            texenc = tex.encode ("utf-8")
+            texenc = tex.lower ().encode ("utf-8")
             self.ptr.DropTexture (texenc)
 
     def ClearTextures (self):
