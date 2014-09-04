@@ -12,7 +12,13 @@ cdef extern from "video_cpp.hpp":
         int fullwindow, int display, int x, int y) except +
         
         void Shutdown ()
+        
+        # Texture binding
         int BindTexture (string name, int width, int height,
             const unsigned char *data)
         void DropTexture (string name)
         void ClearTextures ()
+        
+        # Drawing
+        void DrawClear ()
+        void DrawSwapBuffer ()

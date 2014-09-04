@@ -19,7 +19,7 @@ CScreen::CScreen (std::string name, int width, int height, int fullscreen,
     SDL_GL_SetAttribute (SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute (SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute (SDL_GL_CONTEXT_PROFILE_MASK,
-        SDL_GL_CONTEXT_PROFILE_CORE);
+        SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
     
     int flags = SDL_WINDOW_OPENGL;
     
@@ -56,9 +56,6 @@ CScreen::CScreen (std::string name, int width, int height, int fullscreen,
     }
     
     glGenerateMipmap_ptr = (GL_GenerateMipmap_Func) SDL_GL_GetProcAddress ("glGenerateMipmap");
-    
-    if (!glGenerateMipmap_ptr)
-        throw std::runtime_error ("Could not find the glGenerateMipmap function");
 }
 
 CScreen::~CScreen ()
@@ -133,10 +130,55 @@ void CScreen::ClearTextures ()
 void CScreen::DrawClear ()
 {
     SDL_GL_MakeCurrent (window, context);
+    glClearColor (0.0f, 0.0f, 0.0f, 0.0f);
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+}
+
+void CScreen::DrawHUD (std::vector<CHUDElement *> elements)
+{
+    if (!elements.size ())
+        return;
+
+    std::vector<GLfloat> vertexes;
+
+    glEnable (GL_TEXTURE_2D);
+    glEnable (GL_BLEND);
+
+    for (auto f = elements.begin (); f != elements.end (); ++f)
+    {
+        glPushMatrix ();
+        glOrtho (0.0, 1.0, 1.0, 0.0, -1.0, 1.0);
+        glTranslatef ((*f)->left + ((*f)->width / 2.0f), (*f)->top + ((*f)->height / 2), 0);
+        glRotatef ((*f)->angle, 0, 0, 1);
+    
+        glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glColor4f (1.0, 1.0, 1.0, 1.0);
+    
+        glBindTexture (GL_TEXTURE_2D, this->textures[(*f)->graphic]);
+
+        glBegin (GL_TRIANGLE_STRIP);
+        glTexCoord2f ((*f)->clip_left, (*f)->clip_top);
+        glVertex2f ((*f)->left, (*f)->top);
+        glTexCoord2f ((*f)->clip_left, (*f)->clip_top + (*f)->clip_height);
+        glVertex2f ((*f)->left, (*f)->top + (*f)->height);
+        glTexCoord2f ((*f)->clip_left + (*f)->clip_width, (*f)->clip_top);
+        glVertex2f ((*f)->left + (*f)->width, (*f)->top);
+        glTexCoord2f ((*f)->clip_left + (*f)->clip_width, (*f)->clip_top + (*f)->clip_height);
+        glVertex2f ((*f)->left + (*f)->width, (*f)->top + (*f)->height);
+        glEnd ();
+
+        glPopMatrix ();
+    }
+
+    glDisable (GL_TEXTURE_2D);
+    glDisable (GL_BLEND);
 }
 
 void CScreen::DrawSwapBuffer ()
 {
     SDL_GL_SwapWindow (window);
 }
+
+// 2D HUD structures
+
+

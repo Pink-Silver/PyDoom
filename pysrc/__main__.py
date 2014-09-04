@@ -66,6 +66,7 @@ def main ():
     screen = pydoom_video.Screen ("PyDoom", width, height, fullscreen, False)
     texture = pydoom_video.ImageSurface ("SampleTexture", 10, 10)
     screen.BindTexture (texture)
+    screen.Update ()
     
     from time import sleep
     sleep (5)

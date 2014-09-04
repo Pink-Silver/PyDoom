@@ -8,12 +8,12 @@ from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 from video_cpp cimport CScreen
 
 cdef class ImageSurface:
-    cdef int width
-    cdef int height
+    cdef size_t width
+    cdef size_t height
     cdef str name
     cdef unsigned char *data
     
-    def __init__ (self, str name, int width, int height):
+    def __init__ (self, str name, size_t width, size_t height):
         if width < 1 or height < 1:
             raise ValueError ("Image surface must have a valid width and height")
         
@@ -32,11 +32,11 @@ cdef class ImageSurface:
         if self.data == NULL:
             raise MemoryError ("Could not allocate memory for surface")
     
-    def getPixel (self, int x, int y):
-        if x < 0 or y < 0 or x > self.width or y > self.height:
+    cpdef unsigned int getPixel (self, size_t x, size_t y) except? 0:
+        if x > self.width or y > self.height:
             raise ValueError ("requested x, y out of bounds")
         
-        cdef int startofs = ((y * self.width) + x) * 4
+        cdef size_t startofs = ((y * self.width) + x) * 4
         
         cdef unsigned int color = (
             (self.data[startofs]     << 24) +
@@ -47,11 +47,11 @@ cdef class ImageSurface:
         
         return color
     
-    def setPixel (self, int x, int y, unsigned int color = 0):
-        if x < 0 or y < 0 or x > self.width or y > self.height:
+    cpdef setPixel (self, size_t x, size_t y, unsigned int color = 0):
+        if x > self.width or y > self.height:
             raise ValueError ("requested x, y out of bounds")
         
-        cdef int startofs = ((y * self.width) + x) * 4
+        cdef size_t startofs = ((y * self.width) + x) * 4
         
         self.data[startofs]     = (color >> 24) & 0xFF
         self.data[startofs + 1] = (color >> 16) & 0xFF
@@ -77,11 +77,51 @@ cdef class Screen:
     def Shutdown (self):
         self.ptr.Shutdown ()
     
+    cdef ImageSurface EnlargeTexture (self, ImageSurface image):
+        cdef ImageSurface biggerimage = ImageSurface (image.name,
+            image.width * 4, image.height * 4)
+        
+        cdef size_t x = 0
+        cdef size_t y = 0
+        cdef size_t startofs = 0
+        while y < image.height:
+            x = 0
+            while x < image.width:
+                color = image.getPixel (x, y)
+                
+                biggerimage.setPixel (x * 4,     y * 4,     color)
+                biggerimage.setPixel (x * 4 + 1, y * 4,     color)
+                biggerimage.setPixel (x * 4 + 2, y * 4,     color)
+                biggerimage.setPixel (x * 4 + 3, y * 4,     color)
+
+                biggerimage.setPixel (x * 4,     y * 4 + 1, color)
+                biggerimage.setPixel (x * 4 + 1, y * 4 + 1, color)
+                biggerimage.setPixel (x * 4 + 2, y * 4 + 1, color)
+                biggerimage.setPixel (x * 4 + 3, y * 4 + 1, color)
+
+                biggerimage.setPixel (x * 4,     y * 4 + 2, color)
+                biggerimage.setPixel (x * 4 + 1, y * 4 + 2, color)
+                biggerimage.setPixel (x * 4 + 2, y * 4 + 2, color)
+                biggerimage.setPixel (x * 4 + 3, y * 4 + 2, color)
+
+                biggerimage.setPixel (x * 4,     y * 4 + 3, color)
+                biggerimage.setPixel (x * 4 + 1, y * 4 + 3, color)
+                biggerimage.setPixel (x * 4 + 2, y * 4 + 3, color)
+                biggerimage.setPixel (x * 4 + 3, y * 4 + 3, color)
+
+                x += 1
+            
+            y += 1
+        
+        return biggerimage
+    
+    # Texture binding
     def BindTexture (self, ImageSurface image):
         encname = image.name.lower ().encode ("utf-8")
+        cdef ImageSurface enlarged = self.EnlargeTexture (image)
         
-        cdef int failure = self.ptr.BindTexture (encname, image.width,
-            image.height, image.data)
+        cdef int failure = self.ptr.BindTexture (encname, enlarged.width,
+            enlarged.height, enlarged.data)
 
         if (failure == 1):
             raise RuntimeError ("Could not make OpenGL context current")
@@ -93,3 +133,8 @@ cdef class Screen:
 
     def ClearTextures (self):
         self.ptr.ClearTextures ()
+    
+    # Drawing
+    def Update (self):
+        self.ptr.DrawClear ()
+        self.ptr.DrawSwapBuffer ()
