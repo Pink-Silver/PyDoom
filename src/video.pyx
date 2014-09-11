@@ -5,7 +5,8 @@
 # See the LICENSE file in this program's distribution for details.
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
-from video_cpp cimport CScreen
+from video_cpp cimport CScreen, CHUDElement
+from libcpp.vector cimport vector
 
 cdef class ImageSurface:
     cdef size_t width
@@ -24,13 +25,13 @@ cdef class ImageSurface:
         
         self.data = <unsigned char *> PyMem_Malloc (arraysize * sizeof (unsigned char))
         
+        if self.data == NULL:
+            raise MemoryError ("Could not allocate memory for surface")
+        
         cdef size_t i = 0
         while i < arraysize:
             self.data[i] = 0
             i += 1
-        
-        if self.data == NULL:
-            raise MemoryError ("Could not allocate memory for surface")
     
     cpdef unsigned int getPixel (self, size_t x, size_t y) except? 0:
         if x > self.width or y > self.height:
@@ -63,6 +64,8 @@ cdef class ImageSurface:
 
 cdef class Screen:
     cdef CScreen *ptr
+    cdef vector[CHUDElement *] hud_elements
+    
     def __cinit__ (self, str title = "PyDoom", int width = 640, int height = 480,
         bint fullscreen = False, bint fullwindow = False, int display = 0,
         int x = -1, int y = -1):
@@ -137,4 +140,5 @@ cdef class Screen:
     # Drawing
     def Update (self):
         self.ptr.DrawClear ()
+        self.ptr.DrawHUD (self.hud_elements)
         self.ptr.DrawSwapBuffer ()

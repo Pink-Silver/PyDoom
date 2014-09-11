@@ -5,8 +5,24 @@
 # See the LICENSE file in this program's distribution for details.
 
 from libcpp.string cimport string
+from libcpp.vector cimport vector
 
 cdef extern from "video_cpp.hpp":
+    cdef struct CHUDElement:
+        string graphic
+        
+        float left
+        float top
+        float width
+        float height
+        
+        float clip_left
+        float clip_top
+        float clip_width
+        float clip_height
+        
+        float angle
+        
     cdef cppclass CScreen:
         CScreen (string name, int width, int height, int fullscreen,
         int fullwindow, int display, int x, int y) except +
@@ -21,4 +37,5 @@ cdef extern from "video_cpp.hpp":
         
         # Drawing
         void DrawClear ()
+        void DrawHUD (vector[CHUDElement *] elements)
         void DrawSwapBuffer ()
