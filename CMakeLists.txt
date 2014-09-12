@@ -22,7 +22,7 @@ find_package (OpenGL       REQUIRED)
 find_package (SDL          REQUIRED)
 
 # Tagging
-file (REMOVE "${PyDoom_SOURCE_DIR}/pysrc/version.py")
+file (REMOVE "${PyDoom_SOURCE_DIR}/src/pydoom/version.pyx")
 set (PyDoom_GIT_VERSION "unknown")
 
 if (GIT_FOUND)
@@ -34,19 +34,16 @@ if (GIT_FOUND)
 endif ()
 
 configure_file (
-    "${PyDoom_SOURCE_DIR}/src/version.in.py"
-    "${PyDoom_SOURCE_DIR}/pysrc/pydoom/version.py"
+    "${PyDoom_SOURCE_DIR}/src/pydoom/version.in.pyx"
+    "${PyDoom_SOURCE_DIR}/src/pydoom/version.pyx"
     )
 
 # Building
 add_subdirectory (src)
 
 # Program zip
-add_custom_target (PyDoom.zip ALL
-    ${PYTHON_EXECUTABLE} "${PyDoom_SOURCE_DIR}/MakeZip.py"
-    "${PyDoom_SOURCE_DIR}/pysrc" "${PyDoom_BINARY_DIR}/PyDoom.zip")
 add_custom_target (PyDoomResource.zip ALL
     ${PYTHON_EXECUTABLE} "${PyDoom_SOURCE_DIR}/MakeZip.py"
     "${PyDoom_SOURCE_DIR}/resourcezip" "${PyDoom_BINARY_DIR}/PyDoomResource.zip")
-install (FILES "${PyDoom_BINARY_DIR}/PyDoom.zip"
-    "${PyDoom_BINARY_DIR}/PyDoomResource.zip" DESTINATION ${CMAKE_INSTALL_PREFIX})
+install (FILES "${PyDoom_BINARY_DIR}/PyDoomResource.zip"
+    DESTINATION ${CMAKE_INSTALL_PREFIX})

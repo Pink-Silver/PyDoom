@@ -31,7 +31,7 @@ from pydoom.version import GITVERSION
 from pydoom.configuration import loadSystemConfig
 from pydoom.resources import ResourceZip
 from sys import argv, exit
-import pydoom_video
+import pydoom.video
 
 def main ():
     global masterlog
@@ -63,8 +63,8 @@ def main ():
                 game = thisgame
     del args
     
-    screen = pydoom_video.Screen ("PyDoom", width, height, fullscreen, False)
-    texture = pydoom_video.ImageSurface ("SampleTexture", 10, 10)
+    screen = pydoom.video.Screen ("PyDoom", width, height, fullscreen, False)
+    texture = pydoom.video.ImageSurface ("SampleTexture", 10, 10)
     screen.BindTexture (texture)
     screen.Update ()
     
