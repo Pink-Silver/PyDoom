@@ -1,3 +1,6 @@
+# distutils: language = c++
+# distutils: sources = video_cpp.cpp
+
 # Copyright (c) 2014, Kate Stone
 # All rights reserved.
 #

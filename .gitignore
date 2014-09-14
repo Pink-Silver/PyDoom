@@ -22,6 +22,9 @@ var/
 .installed.cfg
 *.egg
 
+# Generated files
+src/_gen_*.py
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
@@ -51,24 +54,3 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
-
-# CMake
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-*/cmake_install.cmake
-
-# Building
-Release/
-Debug/
-Win32/
-ipch/
-*.dir/
-*.vcxproj
-*.vcxproj.filters
-*.vcxproj.user
-*.sln
-*.sdf
-*.opensdf
-*.suo
-src/version.pyx

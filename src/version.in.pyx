@@ -1,1 +1,0 @@
-GITVERSION = r"@PyDoom_GIT_VERSION@"
