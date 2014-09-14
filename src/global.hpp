@@ -22,6 +22,19 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
+// Modules
+extern "C"
+{
+    PyMODINIT_FUNC PyInit_arguments ();
+    PyMODINIT_FUNC PyInit_configuration ();
+    PyMODINIT_FUNC PyInit_games ();
+    PyMODINIT_FUNC PyInit_graphics ();
+    PyMODINIT_FUNC PyInit_resources ();
+    PyMODINIT_FUNC PyInit_utility ();
+    PyMODINIT_FUNC PyInit_version ();
+    PyMODINIT_FUNC PyInit_video ();
+}
+
 // Math
 #include <cmath>
 

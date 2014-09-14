@@ -24,15 +24,14 @@ add_custom_command (
         ${PyDoom_SOURCE_DIR}/src/main.pyx
 )
 
-add_pyx_file (pydoom/__init__)
-add_pyx_file (pydoom/arguments)
-add_pyx_file (pydoom/configuration)
-add_pyx_file (pydoom/games)
-add_pyx_file (pydoom/graphics)
-add_pyx_file (pydoom/resources)
-add_pyx_file (pydoom/utility)
-add_pyx_file (pydoom/version)
-add_pyx_file (pydoom/video)
+add_pyx_file (arguments)
+add_pyx_file (configuration)
+add_pyx_file (games)
+add_pyx_file (graphics)
+add_pyx_file (resources)
+add_pyx_file (utility)
+add_pyx_file (version)
+add_pyx_file (video)
 
 add_executable (PyDoom
     # Main Program
@@ -44,24 +43,22 @@ add_executable (PyDoom
     video_cpp.cpp
 
     # Modules
-    pydoom/__init__.pyx
-    ${PyDoom_BINARY_DIR}/src/pydoom/__init__.cpp
-    pydoom/arguments.pyx
-    ${PyDoom_BINARY_DIR}/src/pydoom/arguments.cpp
-    pydoom/configuration.pyx
-    ${PyDoom_BINARY_DIR}/src/pydoom/configuration.cpp
-    pydoom/games.pyx
-    ${PyDoom_BINARY_DIR}/src/pydoom/games.cpp
-    pydoom/graphics.pyx
-    ${PyDoom_BINARY_DIR}/src/pydoom/graphics.cpp
-    pydoom/resources.pyx
-    ${PyDoom_BINARY_DIR}/src/pydoom/resources.cpp
-    pydoom/utility.pyx
-    ${PyDoom_BINARY_DIR}/src/pydoom/utility.cpp
-    pydoom/version.pyx
-    ${PyDoom_BINARY_DIR}/src/pydoom/version.cpp
-    pydoom/video.pyx
-    ${PyDoom_BINARY_DIR}/src/pydoom/video.cpp
+    arguments.pyx
+    ${PyDoom_BINARY_DIR}/src/arguments.cpp
+    configuration.pyx
+    ${PyDoom_BINARY_DIR}/src/configuration.cpp
+    games.pyx
+    ${PyDoom_BINARY_DIR}/src/games.cpp
+    graphics.pyx
+    ${PyDoom_BINARY_DIR}/src/graphics.cpp
+    resources.pyx
+    ${PyDoom_BINARY_DIR}/src/resources.cpp
+    utility.pyx
+    ${PyDoom_BINARY_DIR}/src/utility.cpp
+    version.pyx
+    ${PyDoom_BINARY_DIR}/src/version.cpp
+    video.pyx
+    ${PyDoom_BINARY_DIR}/src/video.cpp
 )
 
 target_link_libraries (PyDoom "${PYTHON_LIBRARIES}" "${SDL_LIBRARY}"
