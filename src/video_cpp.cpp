@@ -55,7 +55,13 @@ CScreen::CScreen (std::string name, int width, int height, int fullscreen,
         throw std::runtime_error (err);
     }
     
-    glGenerateMipmap_ptr = (GL_GenerateMipmap_Func) SDL_GL_GetProcAddress ("glGenerateMipmap");
+    GLenum glewstatus = glewInit ();
+    
+    if (glewstatus != GLEW_OK)
+        throw std::runtime_error ((const char *) glewGetErrorString(glewstatus));
+    
+    if (!GLEW_VERSION_3_3)
+        throw std::runtime_error ("OpenGL 3.3 is not supported");
 }
 
 CScreen::~CScreen ()
@@ -96,7 +102,7 @@ int CScreen::BindTexture (std::string name, int width, int height,
         GL_UNSIGNED_BYTE, data);
     glTexEnvi (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-    glGenerateMipmap_ptr (GL_TEXTURE_2D);
+    glGenerateMipmap (GL_TEXTURE_2D);
     glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
         GL_LINEAR_MIPMAP_LINEAR);

@@ -21,10 +21,6 @@
 // Python
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-//#include "py_cpp.hpp"
-
-// Modules
-PyMODINIT_FUNC PyInit_video ();
 
 // Math
 #include <cmath>
@@ -34,8 +30,8 @@ PyMODINIT_FUNC PyInit_video ();
 #include <Windows.h>
 #endif
 
-// SDL
+// SDL & OpenGL
 #include <SDL.h>
-#include <SDL_opengl.h>
+#include <GL/glew.h>
 
 #endif // __GLOBAL_HPP__

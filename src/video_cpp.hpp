@@ -11,9 +11,6 @@
 #include <map>
 #include <vector>
 
-// GL API stuff
-typedef void (APIENTRY *GL_GenerateMipmap_Func)(GLenum);
-
 struct CHUDElement;
 
 class CScreen
@@ -21,9 +18,6 @@ class CScreen
     std::map<std::string, GLuint> textures;
     SDL_Window *window;
     SDL_GLContext context;
-    
-    // OpenGL 3 functions
-    GL_GenerateMipmap_Func glGenerateMipmap_ptr;
     
 public:
     CScreen (std::string name, int width, int height, int fullscreen,
