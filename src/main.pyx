@@ -26,12 +26,12 @@ masterlog.setLevel ("INFO")
 masterlog.addHandler (mainlogconsole)
 masterlog.addHandler (mainlogfile)
 
-from pydoom.arguments import ArgumentParser
-from pydoom.version import GITVERSION
-from pydoom.configuration import loadSystemConfig
-from pydoom.resources import ResourceZip
+from arguments import ArgumentParser
+from version import GITVERSION
+from configuration import loadSystemConfig
+from resources import ResourceZip
 from sys import argv, exit
-import pydoom.video
+import video
 
 def main ():
     global masterlog
@@ -63,8 +63,8 @@ def main ():
                 game = thisgame
     del args
     
-    screen = pydoom.video.Screen ("PyDoom", width, height, fullscreen, False)
-    texture = pydoom.video.ImageSurface ("SampleTexture", 10, 10)
+    screen = video.Screen ("PyDoom", width, height, fullscreen, False)
+    texture = video.ImageSurface ("SampleTexture", 10, 10)
     screen.BindTexture (texture)
     screen.Update ()
     
