@@ -22,7 +22,7 @@ find_package (OpenGL       REQUIRED)
 find_package (SDL          REQUIRED)
 
 # Tagging
-file (REMOVE "${PyDoom_SOURCE_DIR}/src/pydoom/version.pyx")
+file (REMOVE "${PyDoom_SOURCE_DIR}/src/version.pyx")
 set (PyDoom_GIT_VERSION "unknown")
 
 if (GIT_FOUND)
@@ -34,8 +34,8 @@ if (GIT_FOUND)
 endif ()
 
 configure_file (
-    "${PyDoom_SOURCE_DIR}/src/pydoom/version.in.pyx"
-    "${PyDoom_SOURCE_DIR}/src/pydoom/version.pyx"
+    "${PyDoom_SOURCE_DIR}/src/version.in.pyx"
+    "${PyDoom_SOURCE_DIR}/src/version.pyx"
     )
 
 # Building
