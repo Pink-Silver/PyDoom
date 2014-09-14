@@ -4,16 +4,6 @@
 # This file is covered by the 3-clause BSD license.
 # See the LICENSE file in this program's distribution for details.
 
-# Initialize built-ins
-PyInit_arguments ()
-PyInit_configuration ()
-PyInit_games ()
-PyInit_graphics ()
-PyInit_resources ()
-PyInit_utility ()
-PyInit_version ()
-PyInit_video ()
-
 import traceback
 import logging
 

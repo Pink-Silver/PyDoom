@@ -8,15 +8,48 @@ include_directories ("${PYTHON_INCLUDE_DIRS}" "${SDL_INCLUDE_DIR}"
     "${PyDoom_SOURCE_DIR}/extern/glew-1.11.0/include" "${PyDoom_SOURCE_DIR}/src"
     "${PyDoom_BINARY_DIR}/src")
 
-function (add_pyx_file name)
+function (generate_pyx_file name)
     add_custom_command (
         OUTPUT ${PyDoom_BINARY_DIR}/src/${name}.cpp
         COMMAND Cython --annotate --cplus -3
             -o ${PyDoom_BINARY_DIR}/src/${name}.cpp
             ${PyDoom_SOURCE_DIR}/src/${name}.pyx
     )
-endfunction (add_pyx_file)
+endfunction (generate_pyx_file)
 
+function (bare_pyx_library name)
+    generate_pyx_file (${name})
+    
+    add_library (${name}.pyd MODULE
+        ${PyDoom_BINARY_DIR}/src/${name}.cpp
+    )
+
+    target_link_libraries (${name}.pyd "${PYTHON_LIBRARY}")
+    
+    install(TARGETS ${name}.pyd DESTINATION ${CMAKE_INSTALL_PREFIX})
+endfunction (bare_pyx_library name)
+
+bare_pyx_library (arguments)
+bare_pyx_library (configuration)
+bare_pyx_library (games)
+bare_pyx_library (graphics)
+bare_pyx_library (resources)
+bare_pyx_library (utility)
+bare_pyx_library (version)
+
+generate_pyx_file (video)
+add_library (video.pyd MODULE
+    video_cpp.hpp
+    video_cpp.cpp
+    
+    ${PyDoom_BINARY_DIR}/src/video.cpp
+)
+target_link_libraries (video.pyd "${PYTHON_LIBRARY}" "${SDL_LIBRARY}"
+    "${OPENGL_LIBRARIES}"
+    "${PyDoom_SOURCE_DIR}/extern/glew-1.11.0/lib/Release/Win32/glew32.lib")
+install(TARGETS video.pyd DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+# Main program
 add_custom_command (
     OUTPUT ${PyDoom_BINARY_DIR}/src/main.cpp
     COMMAND Cython --annotate --embed --cplus -3
@@ -24,44 +57,13 @@ add_custom_command (
         ${PyDoom_SOURCE_DIR}/src/main.pyx
 )
 
-add_pyx_file (arguments)
-add_pyx_file (configuration)
-add_pyx_file (games)
-add_pyx_file (graphics)
-add_pyx_file (resources)
-add_pyx_file (utility)
-add_pyx_file (version)
-add_pyx_file (video)
-
 add_executable (PyDoom
-    # Main Program
     global.hpp
     main.cpp
     pydoom.rc
-
-    video_cpp.hpp
-    video_cpp.cpp
-
-    # Modules
-    arguments.pyx
-    ${PyDoom_BINARY_DIR}/src/arguments.cpp
-    configuration.pyx
-    ${PyDoom_BINARY_DIR}/src/configuration.cpp
-    games.pyx
-    ${PyDoom_BINARY_DIR}/src/games.cpp
-    graphics.pyx
-    ${PyDoom_BINARY_DIR}/src/graphics.cpp
-    resources.pyx
-    ${PyDoom_BINARY_DIR}/src/resources.cpp
-    utility.pyx
-    ${PyDoom_BINARY_DIR}/src/utility.cpp
-    version.pyx
-    ${PyDoom_BINARY_DIR}/src/version.cpp
-    video.pyx
-    ${PyDoom_BINARY_DIR}/src/video.cpp
 )
 
-target_link_libraries (PyDoom "${PYTHON_LIBRARIES}" "${SDL_LIBRARY}"
+target_link_libraries (PyDoom "${PYTHON_LIBRARY}" "${SDL_LIBRARY}"
     "${SDLMAIN_LIBRARY}" "${OPENGL_LIBRARIES}"
     "${PyDoom_SOURCE_DIR}/extern/glew-1.11.0/lib/Release/Win32/glew32.lib")
 
