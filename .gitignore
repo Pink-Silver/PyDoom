@@ -23,6 +23,7 @@ var/
 *.egg
 
 # Generated files
+PyDoomResource.zip
 extsrc/video.cpp
 
 # Installer logs

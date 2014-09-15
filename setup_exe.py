@@ -4,15 +4,26 @@ import sys
 sys.path.append ("src")
 from cx_Freeze import setup, Executable
 
-# TODO: Proper versioning
+def CheckVersion ():
+    import subprocess
+    
+    process = subprocess.Popen (["git", "describe", "--tags"],
+        universal_newlines=True, stdout=subprocess.PIPE)
+    outbuf, errbuf = process.communicate ()
+    
+    if process.returncode != 0 or not outbuf:
+        return "unknown"
+    
+    return outbuf.strip ()
 
-versstring = "unknown"
+versstring = CheckVersion ()
 
 build_exe_options = dict (
     excludes = ["bz2"],
     include_files = [
         ("extern/SDL2-2.0.3/lib/SDL2.dll", ""),
-        ("extern/glew-1.11.0/bin/Release/Win32/glew32.dll", "")
+        ("extern/glew-1.11.0/bin/Release/Win32/glew32.dll", ""),
+        ("PyDoomResource.zip", "")
         ],
     constants = "GITVERSION={version}".format (version = repr (versstring))
     )
