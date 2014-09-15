@@ -9,7 +9,7 @@ from cx_Freeze import setup, Executable
 versstring = "unknown"
 
 build_exe_options = dict (
-    excludes = ["shutil"],
+    excludes = ["bz2"],
     include_files = [
         ("extern/SDL2-2.0.3/lib/SDL2.dll", ""),
         ("extern/glew-1.11.0/bin/Release/Win32/glew32.dll", "")

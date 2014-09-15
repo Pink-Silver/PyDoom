@@ -6,7 +6,7 @@
 
 import struct
 import logging
-import zipfile
+import zipfile_custom as zipfile
 import sys
 from utility import measuresize
 from io import TextIOWrapper
