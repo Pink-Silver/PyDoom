@@ -1,3 +1,5 @@
+#!python3
+
 # Copyright (c) 2014, Kate Stone
 # All rights reserved.
 #
@@ -27,7 +29,11 @@ masterlog.addHandler (mainlogconsole)
 masterlog.addHandler (mainlogfile)
 
 from arguments import ArgumentParser
-from version import GITVERSION
+GITVERSION = "unknown"
+try:
+    from BUILD_CONSTANTS import GITVERSION
+except ImportError:
+    pass
 from configuration import loadSystemConfig
 from resources import ResourceZip
 from sys import argv, exit

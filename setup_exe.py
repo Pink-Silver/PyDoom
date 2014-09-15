@@ -4,11 +4,17 @@ import sys
 sys.path.append ("src")
 from cx_Freeze import setup, Executable
 
+# TODO: Proper versioning
+
+versstring = "unknown"
+
 build_exe_options = dict (
+    excludes = ["shutil"],
     include_files = [
         ("extern/SDL2-2.0.3/lib/SDL2.dll", ""),
         ("extern/glew-1.11.0/bin/Release/Win32/glew32.dll", "")
-        ]
+        ],
+    constants = "GITVERSION={version}".format (version = repr (versstring))
     )
 
 # GUI applications require a different base on Windows (the default is for a
@@ -16,8 +22,6 @@ build_exe_options = dict (
 base = None
 if sys.platform == "win32":
     base = "Win32GUI"
-
-# TODO: Proper versioning
 
 exe = Executable (
     "src/main.py",

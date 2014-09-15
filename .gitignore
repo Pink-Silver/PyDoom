@@ -23,7 +23,6 @@ var/
 *.egg
 
 # Generated files
-src/_gen_*.py
 extsrc/video.cpp
 
 # Installer logs

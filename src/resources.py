@@ -8,7 +8,7 @@ import struct
 import logging
 import zipfile
 import sys
-from pydoom.utility import measuresize
+from utility import measuresize
 from io import TextIOWrapper
 from importlib import import_module
 from os.path import join as joinpath
