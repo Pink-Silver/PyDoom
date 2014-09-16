@@ -11,33 +11,6 @@
 #include <map>
 #include <vector>
 
-struct CHUDElement;
-
-class CScreen
-{
-    std::map<std::string, GLuint> textures;
-    SDL_Window *window;
-    SDL_GLContext context;
-    
-public:
-    CScreen (std::string name, int width, int height, int fullscreen,
-        int fullwindow, int display, int x, int y);
-    ~CScreen ();
-    
-    void Shutdown ();
-    
-    // Texture binding
-    int BindTexture (std::string name, int width, int height,
-        const unsigned char *data);
-    void DropTexture (std::string name);
-    void ClearTextures ();
-    
-    // Drawing
-    void DrawClear ();
-    void DrawHUD (std::vector<CHUDElement *> elements);
-    void DrawSwapBuffer ();
-};
-
 struct CHUDElement
 {
     std::string graphic;
@@ -45,5 +18,23 @@ struct CHUDElement
     float clip_left, clip_top, clip_width, clip_height;
     float angle;
 };
+
+enum ShaderType
+{
+    SHADER_FRAGMENT,
+    SHADER_VERTEX,
+    SHADER_GEOMETRY
+};
+
+void vid_initialize (std::string, int, int, int, int, int, int, int);
+unsigned int vid_compileshader (std::string, int);
+unsigned int vid_compileprogram (unsigned int *, unsigned int);
+void vid_shutdown ();
+int vid_loadtexture (std::string, int, int, const unsigned char *);
+void vid_unloadtexture (std::string);
+void vid_cleartextures ();
+void vid_clearscreen ();
+void vid_draw2d (std::string, float, float, float, float);
+void vid_swapbuffer ();
 
 #endif // VIDEO_HPP

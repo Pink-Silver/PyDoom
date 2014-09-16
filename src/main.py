@@ -69,15 +69,13 @@ def main ():
                 game = thisgame
     del args
     
-    screen = video.Screen ("PyDoom", width, height, fullscreen, False)
+    video.initialize ("PyDoom", width, height, fullscreen, False)
     texture = video.ImageSurface ("SampleTexture", 10, 10)
-    screen.BindTexture (texture)
-    screen.Update ()
     
     from time import sleep
     sleep (5)
     
-    screen.Shutdown ()
+    video.shutdown ()
 
 try:
     main ()

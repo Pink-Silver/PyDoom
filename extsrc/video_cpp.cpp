@@ -7,19 +7,26 @@
 #include "global.hpp"
 #include "video_cpp.hpp"
 
-CScreen::CScreen (std::string name, int width, int height, int fullscreen,
+SDL_Window *window;
+SDL_GLContext context;
+
+std::map<std::string, GLuint> textures;
+
+void vid_initialize (std::string name, int width, int height, int fullscreen,
     int fullwindow, int display, int x, int y)
 {
+    SDL_Init (SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER);
+    
     SDL_GL_SetAttribute (SDL_GL_RED_SIZE, 8);
     SDL_GL_SetAttribute (SDL_GL_GREEN_SIZE, 8);
     SDL_GL_SetAttribute (SDL_GL_BLUE_SIZE, 8);
     SDL_GL_SetAttribute (SDL_GL_ALPHA_SIZE, 8);
     SDL_GL_SetAttribute (SDL_GL_MULTISAMPLEBUFFERS, 1);
-    SDL_GL_SetAttribute (SDL_GL_MULTISAMPLESAMPLES, 2);
+    SDL_GL_SetAttribute (SDL_GL_MULTISAMPLESAMPLES, 4);
     SDL_GL_SetAttribute (SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute (SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute (SDL_GL_CONTEXT_PROFILE_MASK,
-        SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+        SDL_GL_CONTEXT_PROFILE_CORE);
     
     int flags = SDL_WINDOW_OPENGL;
     
@@ -62,14 +69,67 @@ CScreen::CScreen (std::string name, int width, int height, int fullscreen,
     
     if (!GLEW_VERSION_3_3)
         throw std::runtime_error ("OpenGL 3.3 is not supported");
+
+    // Clear to black
+    glClearColor (0.0f, 0.0f, 0.0f, 0.0f);
 }
 
-CScreen::~CScreen ()
+unsigned int vid_compileshader (std::string source, int type)
 {
-    Shutdown ();
+    GLuint shader = 0;
+    GLenum gentype = 0;
+    GLint status = GL_FALSE;
+    
+    switch (type)
+    {
+    case SHADER_FRAGMENT:
+        gentype = GL_FRAGMENT_SHADER;
+        break;
+    case SHADER_VERTEX:
+        gentype = GL_VERTEX_SHADER;
+        break;
+    case SHADER_GEOMETRY:
+        gentype = GL_GEOMETRY_SHADER;
+        break;
+    default:
+        throw std::runtime_error ("vid_compileshader received an invalid type");
+    }
+    
+    shader = glCreateShader (gentype);
+    
+    glShaderSource (shader, 1, (const GLchar **) source.c_str (), NULL);
+    glGetShaderiv (shader, GL_COMPILE_STATUS, &status);
+    
+    if (status != GL_TRUE)
+    {
+        glDeleteShader (shader);
+        throw std::runtime_error ("vid_compileshader: the shader did not compile");
+    }
+    
+    return shader;
 }
 
-void CScreen::Shutdown ()
+unsigned int vid_compileprogram (unsigned int *shaders, unsigned int numshaders)
+{
+    GLuint program = glCreateProgram ();
+    GLint status = GL_FALSE;
+    
+    for (unsigned int i = 0; i < numshaders; ++i)
+        glAttachShader (program, shaders[i]);
+    
+    glLinkProgram (program);
+    glGetProgramiv (program, GL_LINK_STATUS, &status);
+    
+    if (status != GL_TRUE)
+    {
+        glDeleteProgram (program);
+        throw std::runtime_error ("vid_compileprogram: the program did not compile");
+    }
+    
+    return program;
+}
+
+void vid_shutdown ()
 {
     if (window == NULL) return;
     
@@ -77,14 +137,14 @@ void CScreen::Shutdown ()
     SDL_DestroyWindow (window);
     context = NULL;
     window = NULL;
+    
+    SDL_Quit ();
 }
 
-int CScreen::BindTexture (std::string name, int width, int height,
+int vid_loadtexture (std::string name, int width, int height,
     const unsigned char *data)
 {
     // Image data is assumed provided to us as RGBA8.
-
-    SDL_GL_MakeCurrent (window, context);
 
     if (textures.count (name) > 0)
         return 2;
@@ -114,18 +174,16 @@ int CScreen::BindTexture (std::string name, int width, int height,
     return 0;
 }
 
-void CScreen::DropTexture (std::string name)
+void vid_unloadtexture (std::string name)
 {
     if (!textures.count (name)) return;
 
-    SDL_GL_MakeCurrent (window, context);
     glDeleteTextures (1, &textures[name]);
     textures.erase (name);
 }
 
-void CScreen::ClearTextures ()
+void vid_cleartextures ()
 {
-    SDL_GL_MakeCurrent (window, context);
     for (auto iter = textures.begin (); iter != textures.end (); ++iter)
     {
         glDeleteTextures (1, &iter->second);
@@ -133,15 +191,14 @@ void CScreen::ClearTextures ()
     textures.clear ();
 }
 
-void CScreen::DrawClear ()
+void vid_clearscreen ()
 {
-    SDL_GL_MakeCurrent (window, context);
-    glClearColor (0.0f, 0.0f, 0.0f, 0.0f);
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void CScreen::DrawHUD (std::vector<CHUDElement *> elements)
+void vid_draw2d (std::string graphic, float left, float top, float width, float height)
 {
+/*
     if (!elements.size ())
         return;
 
@@ -178,13 +235,10 @@ void CScreen::DrawHUD (std::vector<CHUDElement *> elements)
 
     glDisable (GL_TEXTURE_2D);
     glDisable (GL_BLEND);
+*/
 }
 
-void CScreen::DrawSwapBuffer ()
+void vid_swapbuffer ()
 {
     SDL_GL_SwapWindow (window);
 }
-
-// 2D HUD structures
-
-
