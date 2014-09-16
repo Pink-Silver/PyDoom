@@ -26,6 +26,9 @@ GLuint drawing_program;
 int vid_initialize (char *name, int width, int height, int fullscreen,
     int fullwindow, int display, int x, int y)
 {
+    int flags;
+    GLenum glewstatus;
+    
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER);
     
     SDL_GL_SetAttribute (SDL_GL_RED_SIZE, 8);
@@ -39,7 +42,7 @@ int vid_initialize (char *name, int width, int height, int fullscreen,
     SDL_GL_SetAttribute (SDL_GL_CONTEXT_PROFILE_MASK,
         SDL_GL_CONTEXT_PROFILE_CORE);
     
-    int flags = SDL_WINDOW_OPENGL;
+    flags = SDL_WINDOW_OPENGL;
     
     if (x < 0)
         x = SDL_WINDOWPOS_CENTERED_DISPLAY (display);
@@ -55,7 +58,7 @@ int vid_initialize (char *name, int width, int height, int fullscreen,
         flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
     }
     
-    window = SDL_CreateWindow (name.c_str (), x, y, width, height, flags);
+    window = SDL_CreateWindow (name, x, y, width, height, flags);
     
     if (!window)
     {
@@ -75,7 +78,7 @@ int vid_initialize (char *name, int width, int height, int fullscreen,
         //throw std::runtime_error (err);
     }
     
-    GLenum glewstatus = glewInit ();
+    glewstatus = glewInit ();
     
     if (glewstatus != GLEW_OK)
         return 0;
@@ -91,7 +94,7 @@ int vid_initialize (char *name, int width, int height, int fullscreen,
     return 1;
 }
 
-unsigned int vid_compileshader (char *source, int type)
+unsigned int vid_compileshader (const char *source, int type)
 {
     GLuint shader = 0;
     GLenum gentype = 0;
@@ -114,7 +117,7 @@ unsigned int vid_compileshader (char *source, int type)
     
     shader = glCreateShader (gentype);
     
-    glShaderSource (shader, 1, (const GLchar **) source.c_str (), NULL);
+    glShaderSource (shader, 1, (const GLchar **) source, NULL);
     glGetShaderiv (shader, GL_COMPILE_STATUS, &status);
     
     if (status != GL_TRUE)
@@ -128,11 +131,17 @@ unsigned int vid_compileshader (char *source, int type)
 
 unsigned int vid_compileprogram (unsigned int *shaders, unsigned int numshaders)
 {
-    GLuint program = glCreateProgram ();
-    GLint status = GL_FALSE;
+    GLuint program;
+    GLint status;
+    unsigned int i;
     
-    for (unsigned int i = 0; i < numshaders; ++i)
+    program = glCreateProgram ();
+    status = GL_FALSE;
+    
+    for (i = 0; i < numshaders; ++i)
+    {
         glAttachShader (program, shaders[i]);
+    }
     
     glLinkProgram (program);
     glGetProgramiv (program, GL_LINK_STATUS, &status);
@@ -165,12 +174,12 @@ void vid_shutdown (void)
 
 unsigned int vid_loadtexture (int width, int height, const unsigned char *data)
 {
+    GLuint newtex;
+    GLuint lastTexture = 0;
+
     // Image data is assumed provided to us as RGBA8.
 
-    GLuint lastTexture = 0;
     glGetIntegerv (GL_TEXTURE_BINDING_2D, (GLint*) &lastTexture);
-
-    GLuint newtex;
 
     glGenTextures (1, &newtex);
     glBindTexture (GL_TEXTURE_2D, newtex);

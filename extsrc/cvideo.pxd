@@ -12,17 +12,17 @@ cdef extern from "cvideo.h":
 
     int vid_initialize (char *name, int width, int height, int fullscreen,
         int fullwindow, int display, int x, int y) except 0
-    unsigned int vid_compileshader (char *source, int type) except 0
+    unsigned int vid_compileshader (const char *source, int type) except 0
     unsigned int vid_compileprogram (unsigned int *shaders,
         unsigned int numshaders) except 0
     void vid_use2dprogram (unsigned int program)
     void vid_use3dprogram (unsigned int program)
-    void vid_shutdown (void)
+    void vid_shutdown ()
     int vid_loadtexture (char *name, int width, int height,
         const unsigned char *data)
     void vid_unloadtexture (char *name)
-    void vid_cleartextures (void)
-    void vid_clearscreen (void)
+    void vid_cleartextures ()
+    void vid_clearscreen ()
     void vid_draw2d (char *graphic, float left, float top, float width,
         float height)
-    void vid_swapbuffer (void)
+    void vid_swapbuffer ()

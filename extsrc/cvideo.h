@@ -15,7 +15,7 @@ enum ShaderType
 };
 
 int vid_initialize (char *, int, int, int, int, int, int, int);
-unsigned int vid_compileshader (char *, int);
+unsigned int vid_compileshader (const char *, int);
 unsigned int vid_compileprogram (unsigned int *, unsigned int);
 void vid_useprogram (unsigned int program);
 void vid_shutdown (void);
