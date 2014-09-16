@@ -12,6 +12,9 @@ SDL_GLContext context;
 
 std::map<std::string, GLuint> textures;
 
+GLuint program_2d_draw;
+GLuint program_3d_draw;
+
 void vid_initialize (std::string name, int width, int height, int fullscreen,
     int fullwindow, int display, int x, int y)
 {
@@ -129,6 +132,16 @@ unsigned int vid_compileprogram (unsigned int *shaders, unsigned int numshaders)
     return program;
 }
 
+void vid_use2dprogram (unsigned int program)
+{
+    program_2d_draw = program;
+}
+
+void vid_use3dprogram (unsigned int program)
+{
+    program_3d_draw = program;
+}
+
 void vid_shutdown ()
 {
     if (window == NULL) return;
@@ -156,16 +169,21 @@ int vid_loadtexture (std::string name, int width, int height,
 
     glGenTextures (1, &newtex);
     glBindTexture (GL_TEXTURE_2D, newtex);
+    glTexStorage2D (GL_TEXTURE_2D, 8, GL_RGBA8, width, height);
 
     glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
-        GL_UNSIGNED_BYTE, data);
-    glTexEnvi (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
+    glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap (GL_TEXTURE_2D);
-    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-        GL_LINEAR_MIPMAP_LINEAR);
+        GL_NEAREST_MIPMAP_NEAREST);
+    
+    if (GL_EXT_texture_filter_anisotropic)
+    {
+        GLfloat animax;
+        glGetFloatv (GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &animax);
+        glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, animax);
+    }
     
     textures[name] = newtex;
 

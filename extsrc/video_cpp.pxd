@@ -32,6 +32,8 @@ cdef extern from "video_cpp.hpp":
         int fullwindow, int display, int x, int y) except +
     unsigned int vid_compileshader (string source, int type) except +
     unsigned int vid_compileprogram (unsigned int *shaders, unsigned int numshaders) except +
+    void vid_use2dprogram (unsigned int program)
+    void vid_use3dprogram (unsigned int program)
     void vid_shutdown ()
     int vid_loadtexture (string name, int width, int height,
         const unsigned char *data)

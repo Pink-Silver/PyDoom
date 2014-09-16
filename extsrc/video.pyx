@@ -74,4 +74,4 @@ def initialize (str title = "PyDoom", int width = 640, int height = 480,
         display, x, y)
 
 def shutdown ():
-    vid_shutdown ()
+    video_cpp.vid_shutdown ()

@@ -29,6 +29,8 @@ enum ShaderType
 void vid_initialize (std::string, int, int, int, int, int, int, int);
 unsigned int vid_compileshader (std::string, int);
 unsigned int vid_compileprogram (unsigned int *, unsigned int);
+void vid_use2dprogram (unsigned int program);
+void vid_use3dprogram (unsigned int program);
 void vid_shutdown ();
 int vid_loadtexture (std::string, int, int, const unsigned char *);
 void vid_unloadtexture (std::string);
