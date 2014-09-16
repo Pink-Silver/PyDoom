@@ -4,10 +4,7 @@
 # This file is covered by the 3-clause BSD license.
 # See the LICENSE file in this program's distribution for details.
 
-from libcpp.string cimport string
-from libcpp.vector cimport vector
-
-cdef extern from "video_cpp.hpp":
+cdef extern from "cvideo.h":
     enum ShaderType:
         SHADER_FRAGMENT,
         SHADER_VERTEX,

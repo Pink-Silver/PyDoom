@@ -16,7 +16,7 @@
 #include <SDL.h>
 #include <GL/glew.h>
 
-#include "video_cpp.hpp"
+#include "cvideo.h"
 
 SDL_Window *window;
 SDL_GLContext context;

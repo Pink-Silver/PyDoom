@@ -4,8 +4,8 @@
 // This file is covered by the 3-clause BSD license.
 // See the LICENSE file in this program's distribution for details.
 
-#ifndef VIDEO_HPP
-#define VIDEO_HPP
+#ifndef VIDEO_H
+#define VIDEO_H
 
 enum ShaderType
 {
@@ -25,4 +25,4 @@ void vid_clearscreen (void);
 void vid_draw2d (unsigned int, float, float, float, float);
 void vid_swapbuffer (void);
 
-#endif // VIDEO_HPP
+#endif // VIDEO_H

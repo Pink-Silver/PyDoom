@@ -9,7 +9,7 @@ setup (
     ext_modules = cythonize (
         Extension (
             "video",
-            ["extsrc/video.pyx", "extsrc/video_cpp.cpp"],
+            ["extsrc/video.pyx", "extsrc/cvideo.c"],
             include_dirs = [
                 "extern/SDL2-2.0.3/include",
                 "extern/glew-1.11.0/include"

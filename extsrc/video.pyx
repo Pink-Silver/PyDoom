@@ -5,7 +5,7 @@
 # See the LICENSE file in this program's distribution for details.
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
-cimport video_cpp
+cimport cvideo
 
 cdef class ImageSurface:
     cdef size_t width
@@ -67,8 +67,8 @@ def initialize (str title = "PyDoom", int width = 640, int height = 480,
     
     enctitle = title.encode ("utf-8")
     
-    video_cpp.vid_initialize (enctitle, width, height, fullscreen, fullwindow,
+    cvideo.vid_initialize (enctitle, width, height, fullscreen, fullwindow,
         display, x, y)
 
 def shutdown ():
-    video_cpp.vid_shutdown ()
+    cvideo.vid_shutdown ()
