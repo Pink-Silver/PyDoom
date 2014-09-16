@@ -1,5 +1,3 @@
-# distutils: language = c++
-
 # Copyright (c) 2014, Kate Stone
 # All rights reserved.
 #
@@ -8,7 +6,6 @@
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 cimport video_cpp
-from libcpp.vector cimport vector
 
 cdef class ImageSurface:
     cdef size_t width

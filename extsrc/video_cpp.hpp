@@ -7,18 +7,6 @@
 #ifndef VIDEO_HPP
 #define VIDEO_HPP
 
-#include "global.hpp"
-#include <map>
-#include <vector>
-
-struct CHUDElement
-{
-    std::string graphic;
-    float left, top, width, height;
-    float clip_left, clip_top, clip_width, clip_height;
-    float angle;
-};
-
 enum ShaderType
 {
     SHADER_FRAGMENT,
@@ -26,17 +14,15 @@ enum ShaderType
     SHADER_GEOMETRY
 };
 
-void vid_initialize (std::string, int, int, int, int, int, int, int);
-unsigned int vid_compileshader (std::string, int);
+int vid_initialize (char *, int, int, int, int, int, int, int);
+unsigned int vid_compileshader (char *, int);
 unsigned int vid_compileprogram (unsigned int *, unsigned int);
-void vid_use2dprogram (unsigned int program);
-void vid_use3dprogram (unsigned int program);
-void vid_shutdown ();
-int vid_loadtexture (std::string, int, int, const unsigned char *);
-void vid_unloadtexture (std::string);
-void vid_cleartextures ();
-void vid_clearscreen ();
-void vid_draw2d (std::string, float, float, float, float);
-void vid_swapbuffer ();
+void vid_useprogram (unsigned int program);
+void vid_shutdown (void);
+unsigned int vid_loadtexture (int, int, const unsigned char *);
+void vid_unloadtexture (unsigned int tex);
+void vid_clearscreen (void);
+void vid_draw2d (unsigned int, float, float, float, float);
+void vid_swapbuffer (void);
 
 #endif // VIDEO_HPP
