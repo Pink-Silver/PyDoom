@@ -14,9 +14,10 @@
 
 int util_initsdl (void)
 {
+    int failure;
     SDL_SetMainReady ();
     
-    int failure = SDL_Init (SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+    failure = SDL_Init (SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS);
     if (failure != 0)
         return 1;
     
@@ -31,8 +32,9 @@ void util_quitsdl (void)
 // Timer
 double timer_tick (void)
 {
-    Uint64 start = SDL_GetPerformanceCounter ();
+    Uint64 start, end;
+    start = SDL_GetPerformanceCounter ();
     SDL_Delay (4);
-    Uint64 end = SDL_GetPerformanceCounter ();
+    end = SDL_GetPerformanceCounter ();
     return (double)(end - start) / (double)SDL_GetPerformanceFrequency ();
 }
