@@ -37,10 +37,12 @@ except ImportError:
 from configuration import loadSystemConfig
 from resources import ResourceZip
 from sys import argv, exit
-import video
+import video, utility
 
 def main ():
     global masterlog
+    
+    utility.initialize ()
 
     masterlog.info ("PyDoom revision {}".format (GITVERSION))
     if argv[1:]:
@@ -76,6 +78,7 @@ def main ():
     sleep (5)
     
     video.shutdown ()
+    utility.shutdown ()
 
 try:
     main ()

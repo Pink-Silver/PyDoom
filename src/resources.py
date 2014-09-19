@@ -8,12 +8,27 @@ import struct
 import logging
 import zipfile_custom as zipfile
 import sys
-from utility import measuresize
 from io import TextIOWrapper
 from importlib import import_module
 from os.path import join as joinpath
 
 resourcelog = logging.getLogger("PyDoom.Resource")
+
+def MeasureSize (size):
+    sizetable = (
+        ("TB", 1024 ** 4),
+        ("GB", 1024 ** 3),
+        ("MB", 1024 ** 2),
+        ("KB", 1024),
+    )
+    
+    suffix = "B"
+    for i in range (len (sizetable)):
+        if size / sizetable[i][1] >= 1:
+            suffix = sizetable[i][0]
+            size /= sizetable[i][1]
+    
+    return "{:.2f}{}".format (size, suffix)
 
 def PeekBytes (bytestr):
     """Returns the type of resource archive based on the byte string
@@ -116,7 +131,7 @@ class WadFile:
         try:
             entry.data = self._file.read (entry.size)
         except MemoryError:
-            resourcelog.error ("Ran out of memory trying to allocate {} for {}.".format (measuresize (entry.size), entry.name))
+            resourcelog.error ("Ran out of memory trying to allocate {} for {}.".format (MeasureSize (entry.size), entry.name))
             raise
         
         return entry.data

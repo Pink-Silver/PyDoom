@@ -29,8 +29,6 @@ int vid_initialize (char *name, int width, int height, int fullscreen,
     int flags;
     GLenum glewstatus;
     
-    SDL_Init (SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER);
-    
     SDL_GL_SetAttribute (SDL_GL_RED_SIZE, 8);
     SDL_GL_SetAttribute (SDL_GL_GREEN_SIZE, 8);
     SDL_GL_SetAttribute (SDL_GL_BLUE_SIZE, 8);
@@ -168,8 +166,6 @@ void vid_shutdown (void)
     SDL_DestroyWindow (window);
     context = NULL;
     window = NULL;
-    
-    SDL_Quit ();
 }
 
 unsigned int vid_loadtexture (int width, int height, const unsigned char *data)

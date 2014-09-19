@@ -67,8 +67,10 @@ def initialize (str title = "PyDoom", int width = 640, int height = 480,
     
     enctitle = title.encode ("utf-8")
     
-    cvideo.vid_initialize (enctitle, width, height, fullscreen, fullwindow,
-        display, x, y)
+    cdef int success = cvideo.vid_initialize (enctitle, width, height,
+        fullscreen, fullwindow, display, x, y)
+    if not success:
+        raise RuntimeError ()
 
 def shutdown ():
     cvideo.vid_shutdown ()

@@ -11,10 +11,10 @@ cdef extern from "cvideo.h":
         SHADER_GEOMETRY
 
     int vid_initialize (char *name, int width, int height, int fullscreen,
-        int fullwindow, int display, int x, int y) except 0
-    unsigned int vid_compileshader (const char *source, int type) except 0
+        int fullwindow, int display, int x, int y)
+    unsigned int vid_compileshader (const char *source, int type)
     unsigned int vid_compileprogram (unsigned int *shaders,
-        unsigned int numshaders) except 0
+        unsigned int numshaders)
     void vid_use2dprogram (unsigned int program)
     void vid_use3dprogram (unsigned int program)
     void vid_shutdown ()
