@@ -179,10 +179,9 @@ unsigned int vid_loadtexture (int width, int height, const unsigned char *data)
 
     glGenTextures (1, &newtex);
     glBindTexture (GL_TEXTURE_2D, newtex);
-    glTexStorage2D (GL_TEXTURE_2D, 8, GL_RGBA8, width, height);
 
     glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
-    glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA,
+    glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
         GL_UNSIGNED_BYTE, data);
     glGenerateMipmap (GL_TEXTURE_2D);
     glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
