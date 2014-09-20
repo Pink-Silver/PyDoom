@@ -10,8 +10,12 @@ if os.path.exists ("PyDoomResource.zip"):
     os.remove ("PyDoomResource.zip")
 
 if os.path.exists ("video.pyd"):
-    print ("Removing C extensions...")
+    print ("Removing video extension...")
     os.remove ("video.pyd")
+
+if os.path.exists ("utility.pyd"):
+    print ("Removing utility extension...")
+    os.remove ("utility.pyd")
 
 if os.path.exists ("build"):
     print ("Removing build directory...")

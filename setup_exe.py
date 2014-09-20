@@ -35,7 +35,7 @@ if sys.platform == "win32":
     base = "Win32GUI"
 
 exe = Executable (
-    "src/main.py",
+    "main.py",
     base = base,
     targetName = "PyDoom.exe",
     icon = "Logo.ico"

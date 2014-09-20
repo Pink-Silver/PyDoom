@@ -10,7 +10,7 @@ setup (
         [
             Extension (
                 "video",
-                ["extsrc/video.pyx", "extsrc/cvideo.c"],
+                ["pydoom/extensions/video.pyx", "pydoom/extensions/cvideo.c"],
                 include_dirs = [
                     "extern/glew-1.11.0/include",
                     "extern/SDL2-2.0.3/include",
@@ -24,7 +24,7 @@ setup (
         
             Extension (
                 "utility",
-                ["extsrc/utility.pyx", "extsrc/cutility.c"],
+                ["pydoom/extensions/utility.pyx", "pydoom/extensions/cutility.c"],
                 include_dirs = [
                     "extern/SDL2-2.0.3/include"
                     ],
