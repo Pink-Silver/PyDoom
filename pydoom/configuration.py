@@ -10,42 +10,18 @@ configlog = logging.getLogger ("PyDoom.Config")
 
 from collections import OrderedDict
 from configparser import ConfigParser
-from sys import platform
+from sys import argv
 from os.path import exists
 from os.path import join as joinpath
-from os import mkdir
+from os import mkdir, sep
 
 # Dummy to return the current directory, in case we don't know what platform
 # we're on.
-findProgramDirectory = lambda: '.'
-
-if platform == 'win32':
-    import ctypes
-    
-    GetModuleFileNameW = ctypes.windll.kernel32.GetModuleFileNameW
-    def findProgramDirectory ():
-        buffer = ctypes.create_unicode_buffer("", 1025)
-        GetModuleFileNameW (ctypes.POINTER(ctypes.c_int)(), buffer, 1024)
-        
-        progdir = buffer.value
-        del buffer
-        return progdir.rpartition("\\")[0]
-
-elif platform == 'linux':
-    from os.path import expanduser
-    
-    def findProgramDirectory ():
-        configdir = expanduser ("~/pydoom")
-        
-        if not exists (configdir):
-            # On linux, the ~ path may not actually exist at first, so create it
-            # now
-            mkdir (configdir)
-        return configdir
-
-findProgramDirectory.__doc__ = """findProgramDirectory () -> str
+def findProgramDirectory ():
+    """findProgramDirectory () -> str
     Returns the program directory used for searching for configuration
     files."""
+    return argv[0].rpartition(sep)[0]
 
 def loadSystemConfig ():
     global configlog
