@@ -27,6 +27,7 @@ PyDoomResource.zip
 pydoom/extensions/video.c
 pydoom/extensions/utility.c
 pydoom/extensions/*.html
+pydoom/extensions/*.dll
 
 # Installer logs
 pip-log.txt

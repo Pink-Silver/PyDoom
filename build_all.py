@@ -5,18 +5,6 @@ import os
 import os.path
 import subprocess
 
-if os.path.exists ("PyDoomResource.zip"):
-    print ("Removing resource zip...")
-    os.remove ("PyDoomResource.zip")
-
-if os.path.exists ("video.pyd"):
-    print ("Removing video extension...")
-    os.remove ("video.pyd")
-
-if os.path.exists ("utility.pyd"):
-    print ("Removing utility extension...")
-    os.remove ("utility.pyd")
-
 if os.path.exists ("build"):
     print ("Removing build directory...")
     shutil.rmtree ("build")
