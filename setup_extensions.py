@@ -9,7 +9,7 @@ setup (
     ext_modules = cythonize (
         [
             Extension (
-                "video",
+                "pydoom.extensions.video",
                 ["pydoom/extensions/video.pyx", "pydoom/extensions/cvideo.c"],
                 include_dirs = [
                     "extern/glew-1.11.0/include",
@@ -23,7 +23,7 @@ setup (
                 ),
         
             Extension (
-                "utility",
+                "pydoom.extensions.utility",
                 ["pydoom/extensions/utility.pyx", "pydoom/extensions/cutility.c"],
                 include_dirs = [
                     "extern/SDL2-2.0.3/include"

@@ -28,16 +28,17 @@ masterlog.setLevel ("INFO")
 masterlog.addHandler (mainlogconsole)
 masterlog.addHandler (mainlogfile)
 
-from arguments import ArgumentParser
+from pydoom.arguments import ArgumentParser
 GITVERSION = "unknown"
 try:
     from BUILD_CONSTANTS import GITVERSION
 except ImportError:
     pass
-from configuration import loadSystemConfig
-from resources import ResourceZip
+from pydoom.configuration import loadSystemConfig
+from pydoom.resources import ResourceZip
 from sys import argv, exit
-import video, utility
+import pydoom.extensions.video as video
+import pydoom.extensions.utility as utility
 
 def main ():
     global masterlog

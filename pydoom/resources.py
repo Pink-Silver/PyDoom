@@ -6,7 +6,7 @@
 
 import struct
 import logging
-import zipfile_custom as zipfile
+import pydoom.zipfile_custom as zipfile
 import sys
 from io import TextIOWrapper
 from importlib import import_module
