@@ -17,8 +17,10 @@ setup (
                     ],
                 libraries = [
                     "opengl32",
-                    "extern/glew-1.11.0/lib/Release/Win32/glew32",
-                    "extern/SDL2-2.0.3/lib/SDL2"
+                    "extern/glew-1.11.0/lib/Release/x64/glew32",
+                    "extern/SDL2-2.0.3/lib/x64/SDL2",
+                    "extern/SDL2-2.0.3/lib/x64/SDL2main",
+                    "extern/SDL2-2.0.3/lib/x64/SDL2test",
                     ]
                 ),
         
@@ -29,7 +31,9 @@ setup (
                     "extern/SDL2-2.0.3/include"
                     ],
                 libraries = [
-                    "extern/SDL2-2.0.3/lib/SDL2"
+                    "extern/SDL2-2.0.3/lib/x64/SDL2",
+                    "extern/SDL2-2.0.3/lib/x64/SDL2main",
+                    "extern/SDL2-2.0.3/lib/x64/SDL2test",
                     ]
                 )
             ]

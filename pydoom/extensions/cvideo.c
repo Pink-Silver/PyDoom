@@ -63,7 +63,6 @@ int vid_initialize (char *name, int width, int height, int fullscreen,
         const char *err = SDL_GetError ();
         SDL_ClearError ();
         return 0;
-        //throw std::runtime_error (err);
     }
     
     context = SDL_GL_CreateContext (window);
@@ -73,21 +72,21 @@ int vid_initialize (char *name, int width, int height, int fullscreen,
         const char *err = SDL_GetError ();
         SDL_ClearError ();
         return 0;
-        //throw std::runtime_error (err);
     }
     
     glewstatus = glewInit ();
     
     if (glewstatus != GLEW_OK)
         return 0;
-        //throw std::runtime_error ((const char *) glewGetErrorString(glewstatus));
     
     if (!GLEW_VERSION_3_3)
         return 0;
-        //throw std::runtime_error ("OpenGL 3.3 is not supported");
 
     // Clear to black
     glClearColor (0.0f, 0.0f, 0.0f, 0.0f);
+    
+    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    SDL_GL_SwapWindow (window);
     
     return 1;
 }

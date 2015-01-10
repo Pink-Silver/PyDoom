@@ -21,8 +21,8 @@ versstring = CheckVersion ()
 build_exe_options = dict (
     excludes = ["bz2"],
     include_files = [
-        ("extern/SDL2-2.0.3/lib/SDL2.dll", ""),
-        ("extern/glew-1.11.0/bin/Release/Win32/glew32.dll", ""),
+        ("extern/SDL2-2.0.3/lib/x64/SDL2.dll", ""),
+        ("extern/glew-1.11.0/bin/Release/x64/glew32.dll", ""),
         ("PyDoomResource.zip", "")
         ],
     constants = "GITVERSION={version}".format (version = repr (versstring))
