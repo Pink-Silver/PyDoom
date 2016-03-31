@@ -17,10 +17,9 @@ setup (
                     ],
                 libraries = [
                     "GL",
-                    "extern/glew-1.11.0/lib/Release/x64/glew32",
-                    "extern/SDL2-2.0.3/lib/x64/SDL2",
-                    "extern/SDL2-2.0.3/lib/x64/SDL2main",
-                    "extern/SDL2-2.0.3/lib/x64/SDL2test",
+                    "GLEW",
+                    "SDL2",
+                    "SDL2main",
                     ]
                 ),
         
