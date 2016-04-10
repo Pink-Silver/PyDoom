@@ -12,14 +12,15 @@ setup (
                 "pydoom.extensions.video",
                 ["pydoom/extensions/video.pyx", "pydoom/extensions/cvideo.c"],
                 include_dirs = [
-                    "extern/glew-1.11.0/include",
-                    "extern/SDL2-2.0.3/include",
+                    "/usr/include/GL",
+                    "/usr/include/SDL2",
                     ],
                 libraries = [
                     "GL",
                     "GLEW",
                     "SDL2",
                     "SDL2main",
+                    "SDL2_test",
                     ]
                 ),
         
@@ -27,12 +28,12 @@ setup (
                 "pydoom.extensions.utility",
                 ["pydoom/extensions/utility.pyx", "pydoom/extensions/cutility.c"],
                 include_dirs = [
-                    "extern/SDL2-2.0.3/include"
+                    "/usr/include/SDL2"
                     ],
                 libraries = [
-                    "extern/SDL2-2.0.3/lib/x64/SDL2",
-                    "extern/SDL2-2.0.3/lib/x64/SDL2main",
-                    "extern/SDL2-2.0.3/lib/x64/SDL2test",
+                    "SDL2",
+                    "SDL2main",
+                    "SDL2_test",
                     ]
                 )
             ]
