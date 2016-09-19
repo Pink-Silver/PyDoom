@@ -3,13 +3,9 @@ PyDoom
 A port of the game DOOM to the Python scripting language, aiming for
 maximum flexibility through modding.
 
-IMPORTANT: You will need these dependencies beforehand:
-[source]
-----
-pip install cython
-pip install cx-freeze
-----
-Without them, you cannot build the extensions or binaries.
+IMPORTANT: You will need the Cython and cx_Freeze packages from PyPI if you're
+running PyDoom from source. Otherwise, you will be unable to build the C
+extensions or the binaries.
 
 Running
 ~~~~~~~
