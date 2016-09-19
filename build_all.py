@@ -1,5 +1,6 @@
 #!python3
 
+import sys
 import shutil
 import os
 import os.path
@@ -19,8 +20,11 @@ try:
     if failure or not os.path.exists ("PyDoomResource.zip"):
         raise RuntimeError ("Building the resource zip failed!")
 
+    setupscript = "setup_extensions_linux.py"
+    if sys.platform == "win32":
+        setupscript = "setup_extensions.py"
     print ("Building C extensions...")
-    failure = subprocess.call (["python", "setup_extensions.py", "build_ext", "--inplace"])
+    failure = subprocess.call (["python", setupscript, "build_ext", "--inplace"])
     if failure:
         raise RuntimeError ("Building the C extensions failed!")
 
