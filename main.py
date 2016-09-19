@@ -10,9 +10,7 @@ import traceback
 import logging
 
 # sys.path manipulation
-from sys import path, stdout
-path.insert (0, "PyDoom.zip")
-del path
+from sys import stdout
 
 mainlogformat = logging.Formatter (style='{',
     fmt='[{levelname:8s}] ({name:13s}) {message}')

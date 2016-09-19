@@ -1,23 +1,44 @@
 PyDoom
-======
-A pure port of the game DOOM to the Python scripting language, aiming for
+------
+A port of the game DOOM to the Python scripting language, aiming for
 maximum flexibility through modding.
 
-Running
--------
-If you're running from source on Windows, make sure you have Python 3.4
-installed beforehand. It will not run with earlier versions.
+IMPORTANT: You will need these dependencies beforehand:
+[source]
+----
+pip install cython
+pip install cx-freeze
+----
+Without them, you cannot build the extensions or binaries.
 
-Since the package is mostly Python, very little is needed to build. Just run:
+Running
+~~~~~~~
+If you're running from source, make sure you have Python 3.5 installed
+beforehand. It will not run with earlier versions.
+
+Since the package is mostly Python, very little is needed to run it. Just run:
 
 [source]
+----
 MakeZip.py resourcezip PyDoomResource.zip
 setup_extensions.py build_ext --inplace
+----
+
+The second command will only work in a VC or SDK build prompt on Windows.
 
 Everything else should take care of itself. You only need to run these once, or
 if you change the resource zip directory or the C extensions, though you should
 not ever need to.
 
-If you're on linux or another system, you will need to modify
-setup_extensions.py to point to your system SDL2 and glew packages. The ones
-included are Windows-only.
+Building a binary
+~~~~~~~~~~~~~~~~~
+
+If you're building an executable, you will need the cx-freeze package
+installed. You only need to run one command in your VC/SDK build prompt:
+
+[source]
+----
+build_all.py
+----
+
+and everything else will be taken care of for you.

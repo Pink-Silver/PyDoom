@@ -1,8 +1,15 @@
 #!python3
 
+import sys
 from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Build import cythonize
+
+glew_dir = "/usr/include/GL"
+sdl_dir  = "/usr/include/SDL2"
+if sys.platform == "win32":
+    glew_dir = "extern\\glew-2.0.0\\include"
+    sdl_dir  = "extern\\SDL2-2.0.4\\include"
 
 setup (
     name = 'PyDoom rendering module',
@@ -12,8 +19,8 @@ setup (
                 "pydoom.extensions.video",
                 ["pydoom/extensions/video.pyx", "pydoom/extensions/cvideo.c"],
                 include_dirs = [
-                    "extern\\glew-2.0.0\\include",
-                    "extern\\SDL2-2.0.4\\include",
+                    glew_dir,
+                    sdl_dir,
                     ],
                 libraries = [
                     "GL",
@@ -28,7 +35,7 @@ setup (
                 "pydoom.extensions.utility",
                 ["pydoom/extensions/utility.pyx", "pydoom/extensions/cutility.c"],
                 include_dirs = [
-                    "extern\\SDL2-2.0.4\\include"
+                    sdl_dir
                     ],
                 libraries = [
                     "SDL2",

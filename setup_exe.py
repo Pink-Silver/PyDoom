@@ -18,13 +18,16 @@ def CheckVersion ():
 
 versstring = CheckVersion ()
 
+files_to_copy = [
+    ("PyDoomResource.zip", "")
+]
+if sys.platform == "win32":
+    files_to_copy.append (("extern/SDL2-2.0.4/lib/x64/SDL2.dll", ""))
+    files_to_copy.append (("extern/glew-2.0.0/bin/Release/x64/glew32.dll", ""))
+
 build_exe_options = dict (
     excludes = ["bz2"],
-    include_files = [
-        ("extern/SDL2-2.0.4/lib/x64/SDL2.dll", ""),
-        ("extern/glew-2.0.0/bin/Release/x64/glew32.dll", ""),
-        ("PyDoomResource.zip", "")
-        ],
+    include_files = files_to_copy,
     constants = "GITVERSION={version}".format (version = repr (versstring))
     )
 
