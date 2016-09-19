@@ -23,6 +23,7 @@ var/
 *.egg
 
 # Generated files
+pydoom.ini
 PyDoomResource.zip
 pydoom/extensions/video.c
 pydoom/extensions/utility.c
