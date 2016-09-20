@@ -29,7 +29,7 @@ not ever need to.
 Building a binary
 ~~~~~~~~~~~~~~~~~
 
-If you're building an executable, you will need the cx-freeze package
+If you're building an executable, you will need the cx_Freeze package
 installed. You only need to run one command in your VC/SDK build prompt:
 
 [source]
