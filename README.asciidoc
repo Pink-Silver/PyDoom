@@ -14,11 +14,8 @@ beforehand. It will not run with earlier versions.
 
 Since the package is mostly Python, very little is needed to run it. Just run:
 
-[source]
-----
-MakeZip.py resourcezip PyDoomResource.zip
-setup_extensions.py build_ext --inplace
-----
+ MakeZip.py resourcezip PyDoomResource.zip
+ setup_extensions.py build_ext --inplace
 
 The second command will only work in a VC or SDK build prompt on Windows.
 
@@ -32,9 +29,6 @@ Building a binary
 If you're building an executable, you will need the cx_Freeze package
 installed. You only need to run one command in your VC/SDK build prompt:
 
-[source]
-----
-build_all.py
-----
+ build_all.py
 
 and everything else will be taken care of for you.
