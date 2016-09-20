@@ -1,4 +1,4 @@
-# Copyright (c) 2014, Kate Stone
+# Copyright (c) 2014, Kate Fox
 # All rights reserved.
 #
 # This file is covered by the 3-clause BSD license.
@@ -6,7 +6,7 @@
 
 import struct
 import logging
-import pydoom.zipfile_custom as zipfile
+import zipfile
 import sys
 from io import TextIOWrapper
 from importlib import import_module
