@@ -35,7 +35,7 @@ setup (
         [
             Extension (
                 "pydoom.extensions.video",
-                ["pydoom/extensions/video.pyx", "pydoom/extensions/cvideo.c"],
+                ["pydoom/extensions/video.pyx"],
                 include_dirs = [
                     glew_dir,
                     sdl_dir,
