@@ -51,7 +51,7 @@ setup (
         
             Extension (
                 "pydoom.extensions.utility",
-                ["pydoom/extensions/utility.pyx", "pydoom/extensions/cutility.c"],
+                ["pydoom/extensions/utility.pyx"],
                 include_dirs = [
                     sdl_dir
                     ],
