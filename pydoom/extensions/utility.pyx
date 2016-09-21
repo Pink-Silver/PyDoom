@@ -23,16 +23,19 @@ cdef extern from "<SDL.h>":
     void SDL_SetMainReady ()
     Uint64 SDL_GetPerformanceCounter ()
     Uint64 SDL_GetPerformanceFrequency()
+    const char *SDL_GetError ()
+    void SDL_ClearError ()
 
 def initialize ():
     cdef int failure = 0
+    cdef const char *err = NULL
     SDL_SetMainReady ()
     
     failure = SDL_Init (SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS)
     if failure is not 0:
-        return True
-    
-    return False
+        err = SDL_GetError ()
+        SDL_ClearError ()
+        raise RuntimeError (str (err, "utf8"))
 
 def shutdown ():
     SDL_Quit ()
