@@ -23,6 +23,7 @@ cdef extern from *: # GL/gl.h
         
         GL_COMPILE_STATUS
         GL_LINK_STATUS
+        GL_INFO_LOG_LENGTH
         
         GL_COLOR_BUFFER_BIT
         GL_DEPTH_BUFFER_BIT
@@ -38,6 +39,7 @@ cdef extern from *: # GL/gl.h
     
     GLuint glCreateProgram ()
     void glAttachShader (GLuint program, GLuint shader)
+    void glDetachShader (GLuint program, GLuint shader)
     void glLinkProgram (GLuint program)
     void glGetProgramiv (GLuint program, GLenum pname, GLint *params)
     void glDeleteProgram (GLuint program)
@@ -87,7 +89,7 @@ cdef class OpenGLInterface:
     
     cdef GLuint drawing_program
     
-    def __init__ (self, const char *title = "PyDoom", int width = 640,
+    def __init__ (self, str title = "PyDoom", int width = 640,
     int height = 480, bint fullscreen = False, bint fullwindow = False,
     int display = 0, int x = -1, int y = -1):
         """OpenGLInterface (title = "PyDoom", width = 640, height = 480, fullscreen = False, fullwindow = False, display = 0, x = -1, y = -1)
@@ -96,7 +98,9 @@ cdef class OpenGLInterface:
         """
         
         cdef int flags = SDL_WINDOW_OPENGL
-        cdef GLenum glewstatus
+        cdef GLenum glewstatus = 0
+        cdef const char *err = NULL
+        encoded_title = bytes (title, "utf8")
         
         SDL_GL_SetAttribute (SDL_GL_RED_SIZE, 8)
         SDL_GL_SetAttribute (SDL_GL_GREEN_SIZE, 8)
@@ -121,20 +125,19 @@ cdef class OpenGLInterface:
             flags &= ~SDL_WINDOW_FULLSCREEN
             flags |= SDL_WINDOW_FULLSCREEN_DESKTOP
         
-        self.window = SDL_CreateWindow (title, x, y, width, height, flags)
+        self.window = SDL_CreateWindow (encoded_title, x, y, width, height, flags)
         
-        cdef const char *err = NULL
         if not self.window:
             err = SDL_GetError ()
             SDL_ClearError ()
-            raise RuntimeError (err.decode ("utf8"))
+            raise RuntimeError (str (err, "utf8"))
         
         self.context = SDL_GL_CreateContext (self.window)
         
         if not self.context:
             err = SDL_GetError ()
             SDL_ClearError ()
-            raise RuntimeError (err.decode ("utf8"))
+            raise RuntimeError (str (err, "utf8"))
         
         glewstatus = glewInit ()
         
@@ -162,50 +165,55 @@ cdef class OpenGLInterface:
     def swap (self):
         SDL_GL_SwapWindow (self.window)
     
-    def compileShader (self, str source, int type):
-        cdef const char *sourceconst = source;
-        cdef GLuint shader = 0
-        cdef GLenum gentype = 0
-        cdef GLint status = GL_FALSE
-        
-        if type == 0:
-            gentype = GL_FRAGMENT_SHADER
-        elif type == 1:
-            gentype = GL_VERTEX_SHADER
-        elif type == 2:
-            gentype = GL_GEOMETRY_SHADER
-        else:
-            return None
-        
-        shader = glCreateShader (gentype)
-        
-        glShaderSource (shader, 1, <const GLchar **> sourceconst, NULL)
-        glGetShaderiv (shader, GL_COMPILE_STATUS, &status)
-        
-        if status is not GL_TRUE:
-            glDeleteShader (shader)
-            return None
-        
-        return shader
-    
-    def compileProgram (self, tuple shaders):
+    def compileProgram (self, fragShader = None, vertShader = None, geomShader = None):
         cdef GLuint program = 0
         cdef GLint status = GL_FALSE
-        cdef int shaderlen = len (shaders)
-        cdef int i = 0
+        cdef GLuint fragShaderID, vertShaderID, geomShaderID
+        
+        cdef const char *fragShaderSource = NULL
+        cdef const char *vertShaderSource = NULL
+        cdef const char *geomShaderSource = NULL
         
         program = glCreateProgram ()
         
-        while i < shaderlen:
-            glAttachShader (program, shaders[i])
-            i += 1
+        if fragShader is not None:
+            fragShaderBytes = bytes (fragShader, "utf8")
+            fragShaderSource = fragShaderBytes
+            fragShaderID = glCreateShader (GL_FRAGMENT_SHADER)
+            glShaderSource (fragShaderID, 1, <const GLchar **> fragShaderSource, NULL)
+            glGetShaderiv (fragShaderID, GL_COMPILE_STATUS, &status)
+            glAttachShader (program, fragShaderID)
+        
+        if vertShader is not None:
+            vertShaderBytes = bytes (vertShader, "utf8")
+            vertShaderSource = vertShaderBytes
+            vertShaderID = glCreateShader (GL_VERTEX_SHADER)
+            glShaderSource (vertShaderID, 1, <const GLchar **> vertShaderSource, NULL)
+            glGetShaderiv (vertShaderID, GL_COMPILE_STATUS, &status)
+            glAttachShader (program, vertShaderID)
+        
+        if geomShader is not None:
+            geomShaderBytes = bytes (geomShader, "utf8")
+            geomShaderSource = geomShaderBytes
+            geomShaderID = glCreateShader (GL_GEOMETRY_SHADER)
+            glShaderSource (geomShaderID, 1, <const GLchar **> geomShaderSource, NULL)
+            glGetShaderiv (geomShaderID, GL_COMPILE_STATUS, &status)
+            glAttachShader (program, geomShaderID)
         
         glLinkProgram (program)
         glGetProgramiv (program, GL_LINK_STATUS, &status)
         
-        if status is not GL_TRUE:
-            glDeleteProgram (program)
-            return None
+        if fragShader is not None:
+            glDetachShader (program, fragShaderID)
+            glDeleteShader (fragShaderID)
+        
+        if vertShader is not None:
+            glDetachShader (program, vertShaderID)
+            glDeleteShader (vertShaderID)
+        
+        if geomShader is not None:
+            glDetachShader (program, geomShaderID)
+            glDeleteShader (geomShaderID)
         
         return program
     
@@ -262,11 +270,13 @@ cdef class ImageSurface:
     cdef const char *name
     cdef unsigned char *data
     
-    def __init__ (self, const char *name, size_t width, size_t height):
+    def __init__ (self, str name, size_t width, size_t height):
         if width < 1 or height < 1:
             raise ValueError ("Image surface must have a valid width and height")
         
-        self.name = name
+        encoded_name = bytes (name, "utf8")
+        
+        self.name = encoded_name
         self.width = width
         self.height = height
         cdef size_t arraysize = width * height * 4
@@ -282,8 +292,8 @@ cdef class ImageSurface:
             i += 1
     
     cpdef unsigned int getPixel (self, size_t x, size_t y) except? 0:
-        if x > self.width or y > self.height:
-            raise ValueError ("requested x, y out of bounds")
+        if x < 0 or y < 0 or x > self.width or y > self.height:
+            return 0
         
         cdef size_t startofs = ((y * self.width) + x) * 4
         
@@ -296,9 +306,9 @@ cdef class ImageSurface:
         
         return color
     
-    cpdef setPixel (self, size_t x, size_t y, unsigned int color = 0):
-        if x > self.width or y > self.height:
-            raise ValueError ("requested x, y out of bounds")
+    cpdef void setPixel (self, size_t x, size_t y, unsigned int color = 0):
+        if x < 0 or y < 0 or x > self.width or y > self.height:
+            return
         
         cdef size_t startofs = ((y * self.width) + x) * 4
         

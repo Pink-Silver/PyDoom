@@ -70,8 +70,8 @@ def main ():
                 game = thisgame
     del args
     
-    screen = video.OpenGLInterface ("PyDoom".encode ("utf8"), width, height, fullscreen, False)
-    texture = video.ImageSurface ("SampleTexture".encode ("utf8"), 10, 10)
+    screen = video.OpenGLInterface ("PyDoom", width, height, fullscreen, False)
+    texture = video.ImageSurface ("SampleTexture", 10, 10)
     
     from time import sleep
     sleep (5)
