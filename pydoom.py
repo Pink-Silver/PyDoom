@@ -13,7 +13,7 @@ import logging
 from sys import stdout
 
 mainlogformat = logging.Formatter (style='{',
-    fmt='[{levelname:8s}] ({name:13s}) {message}')
+    fmt='[{levelname}] ({name}) {message}')
     
 mainlogfile = logging.FileHandler ("pydoom.log", "w")
 mainlogfile.setFormatter (mainlogformat)

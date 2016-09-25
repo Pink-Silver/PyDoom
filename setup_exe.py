@@ -34,13 +34,13 @@ build_exe_options = dict (
 # GUI applications require a different base on Windows (the default is for a
 # console application).
 base = None
-target = "PyDoom"
+target = "pydoom"
 if sys.platform == "win32":
     base = "Win32GUI"
-    target = "PyDoom.exe"
+    target = "pydoom.exe"
 
 exe = Executable (
-    "main.py",
+    "pydoom.py",
     base = base,
     targetName = target,
     icon = "Logo.ico"
@@ -49,7 +49,7 @@ exe = Executable (
 setup (
     name = "PyDoom",
     version = "0.1",
-    description = "A pure port of the game DOOM to the Python scripting language, aiming for maximum flexibility through modding.",
+    description = "A port of the game DOOM to the Python scripting language, aiming for maximum flexibility through modding.",
     options = dict (build_exe = build_exe_options),
     executables = [exe]
     )
