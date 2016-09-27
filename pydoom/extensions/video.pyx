@@ -83,6 +83,7 @@ cdef extern from "<GL/gl.h>":
     void glGetProgramiv (GLuint program, GLenum pname, GLint *params)
     void glDeleteProgram (GLuint program)
     void glUseProgram (GLuint program)
+    void glDeleteProgram (GLuint program)
 
     void glClearColor (float red, float green, float blue, float alpha)
     void glClear (int mask)
@@ -143,7 +144,8 @@ cdef extern from "<SDL.h>":
     SDL_GLContext SDL_GL_CreateContext (SDL_Window *window)
     void SDL_GL_DeleteContext (SDL_GLContext context)
 
-    SDL_Window *SDL_CreateWindow (const char *title, int x, int y, int w, int h, int flags)
+    SDL_Window *SDL_CreateWindow (const char *title, int x, int y, int w,
+        int h, int flags)
     void SDL_DestroyWindow(SDL_Window *window)
     
     const char *SDL_GetError ()
@@ -153,16 +155,20 @@ cdef class ImageSurface:
     cdef size_t width
     cdef size_t height
     cdef unsigned char *data
-    
-    def __init__ (self, size_t width, size_t height):
+
+    def __cinit__ (self, size_t width, size_t height):
+        """Provides C-level allocation of data structures."""
+        
         if width < 1 or height < 1:
-            raise ValueError ("Image surface must have a valid width and height")
+            raise ValueError ("Image surface must have a valid width and \
+height")
         
         self.width = width
         self.height = height
         cdef size_t arraysize = width * height * 4
         
-        self.data = <unsigned char *> PyMem_Malloc (arraysize * sizeof (unsigned char))
+        self.data = <unsigned char *> PyMem_Malloc (arraysize *
+            sizeof (unsigned char))
         
         if self.data == NULL:
             raise MemoryError ("Could not allocate memory for surface")
@@ -172,33 +178,52 @@ cdef class ImageSurface:
             self.data[i] = 0
             i += 1
     
-    cpdef unsigned int getPixel (self, size_t x, size_t y) except? 0:
+    def __init__ (self, size_t width, size_t height):
+        """ImageSurface (width, height) -> ImageSurface
+        
+        Creates a new ImageSurface that can be used to load and modify OpenGL
+        textures."""
+        
+        pass
+    
+    def getPixel (self, size_t x, size_t y) -> tuple:
+        """I.getPixel (x, y) -> tuple
+        
+        Returns a color as a (red, green, blue, alpha) tuple."""
+        
         if x < 0 or y < 0 or x > self.width or y > self.height:
             return 0
         
         cdef size_t startofs = ((y * self.width) + x) * 4
         
-        cdef unsigned int color = (
-                (self.data[startofs]     << 24) +
-                (self.data[startofs + 1] << 16) +
-                (self.data[startofs + 2] << 8) +
-                self.data[startofs + 3]
-            )
+        color = (
+            self.data[startofs],
+            self.data[startofs + 1],
+            self.data[startofs + 2],
+            self.data[startofs + 3]
+        )
         
         return color
     
-    cpdef void setPixel (self, size_t x, size_t y, unsigned int color = 0):
+    def setPixel (self, size_t x, size_t y, color=(0, 0, 0, 0)):
+        """I.setPixel (x, y[, color])
+        
+        Sets the corresponding pixel to the provided color. If the color is
+        omitted, transparent is assumed."""
+        
         if x < 0 or y < 0 or x > self.width or y > self.height:
             return
         
         cdef size_t startofs = ((y * self.width) + x) * 4
         
-        self.data[startofs]     = (color >> 24) & 0xFF
-        self.data[startofs + 1] = (color >> 16) & 0xFF
-        self.data[startofs + 2] = (color >>  8) & 0xFF
-        self.data[startofs + 3] =  color        & 0xFF
+        self.data[startofs]     = color[0] & 0xFF
+        self.data[startofs + 1] = color[1] & 0xFF
+        self.data[startofs + 2] = color[2] & 0xFF
+        self.data[startofs + 3] = color[3] & 0xFF
     
-    def __del__ (self):
+    def __dealloc__ (self):
+        """Implements ImageSurface deletion."""
+        
         PyMem_Free (self.data)
 
 cdef class OpenGLInterface:
@@ -206,6 +231,7 @@ cdef class OpenGLInterface:
     cdef SDL_GLContext context
     
     cdef dict textures
+    cdef dict shaderPrograms
     
     cdef float spriteBuffer[18]
     cdef float spriteBufferUVs[12]
@@ -215,15 +241,18 @@ cdef class OpenGLInterface:
     cdef GLuint drawProgram2D
     cdef GLuint drawProgram3D
     
-    def __init__ (self, str title = "PyDoom", int width = 640,
-    int height = 480, bint fullscreen = False, bint fullwindow = False,
-    int display = 0, int x = -1, int y = -1):
-        """OpenGLInterface (title: str = "PyDoom", width: int = 640, height: int = 480, fullscreen: bool = False, fullwindow: bool = False, display: int = 0, x: int = -1, y: int = -1)
+    def __init__ (self, str title="PyDoom", int width=640,
+    int height=480, bint fullscreen=False, bint fullwindow=False,
+    int display=0, int x=-1, int y=-1):
+        """OpenGLInterface (title="PyDoom", width=640, height=480,
+        fullscreen=False, fullwindow=False, display=0, x=-1,
+        y=-1) -> OpenGLInterface
         
         Creates a new OpenGL context window for rendering on.
         """
         
         self.textures = {}
+        self.shaderPrograms = {}
         
         cdef int flags = SDL_WINDOW_OPENGL
         cdef GLenum glewstatus = 0
@@ -253,7 +282,8 @@ cdef class OpenGLInterface:
             flags &= ~SDL_WINDOW_FULLSCREEN
             flags |= SDL_WINDOW_FULLSCREEN_DESKTOP
         
-        self.window = SDL_CreateWindow (encoded_title, x, y, width, height, flags)
+        self.window = SDL_CreateWindow (encoded_title, x, y, width, height,
+            flags)
         
         if not self.window:
             err = SDL_GetError ()
@@ -293,23 +323,39 @@ cdef class OpenGLInterface:
         # Clear to black
         glClearColor (0.0, 0.0, 0.0, 0.0)
         
-        glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
+        glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
+            GL_STENCIL_BUFFER_BIT)
         SDL_GL_SwapWindow (self.window)
     
     def __del__ (self):
+        """Implements OpenGLInterface deletion."""
+        
         SDL_GL_DeleteContext (self.context)
         SDL_DestroyWindow (self.window)
         self.context = NULL
         self.window = NULL
     
     def clear (self):
-        glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
+        """W.clear ()
+        
+        Clears the screen."""
+        
+        glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
+            GL_STENCIL_BUFFER_BIT)
     
     def swap (self):
+        """W.swap ()
+        
+        Waits for the frame to fully render, then swaps the screen buffers."""
+        
         glFinish ()
         SDL_GL_SwapWindow (self.window)
     
-    def compileProgram (self, fragShader = None, vertShader = None) -> int:
+    def compileProgram (self, name, fragShader, vertShader):
+        """W.compileProgram (name, fragShader, vertShader)
+        
+        Compiles a shader program from sources, provided as strings."""
+        
         cdef GLuint program = 0
         cdef GLint status = GL_FALSE
         cdef GLuint fragShaderID = 0, vertShaderID = 0
@@ -333,16 +379,20 @@ cdef class OpenGLInterface:
             glAttachShader (program, fragShaderID)
 
             if status != GL_TRUE:
-                glGetShaderiv (fragShaderID, GL_INFO_LOG_LENGTH, &infoLogLength)
+                glGetShaderiv (fragShaderID, GL_INFO_LOG_LENGTH,
+                    &infoLogLength)
                 infoLogStr = "unknown error"
                 if infoLogLength > 0:
-                    infoLog = <char *> PyMem_Malloc (infoLogLength * sizeof (char))
+                    infoLog = <char *> PyMem_Malloc (infoLogLength *
+                        sizeof (char))
                     for i in range (0, infoLogLength):
                         infoLog[i] = b'\x00'
-                    glGetShaderInfoLog (fragShaderID, infoLogLength, &outLogLength, infoLog)
+                    glGetShaderInfoLog (fragShaderID, infoLogLength,
+                        &outLogLength, infoLog)
                     infoLogStr = str (infoLog, "utf8")
                     PyMem_Free (infoLog)
-                raise RuntimeError ("Fragment shader failed to compile:\n" + infoLogStr)
+                raise RuntimeError ("Fragment shader failed to compile:\n" +
+                    infoLogStr)
         
         if vertShader is not None:
             vertShaderBytes = bytes (vertShader, "utf8")
@@ -354,16 +404,20 @@ cdef class OpenGLInterface:
             glAttachShader (program, vertShaderID)
 
             if status != GL_TRUE:
-                glGetShaderiv (vertShaderID, GL_INFO_LOG_LENGTH, &infoLogLength)
+                glGetShaderiv (vertShaderID, GL_INFO_LOG_LENGTH,
+                    &infoLogLength)
                 infoLogStr = "unknown error"
                 if infoLogLength > 0:
-                    infoLog = <char *> PyMem_Malloc (infoLogLength * sizeof (char))
+                    infoLog = <char *> PyMem_Malloc (infoLogLength *
+                        sizeof (char))
                     for i in range (0, infoLogLength):
                         infoLog[i] = b'\x00'
-                    glGetShaderInfoLog (vertShaderID, infoLogLength, &outLogLength, infoLog)
+                    glGetShaderInfoLog (vertShaderID, infoLogLength,
+                        &outLogLength, infoLog)
                     infoLogStr = str (infoLog, "utf8")
                     PyMem_Free (infoLog)
-                raise RuntimeError ("Vertex shader failed to compile:\n" + infoLogStr)
+                raise RuntimeError ("Vertex shader failed to compile:\n" +
+                    infoLogStr)
         
         glLinkProgram (program)
         glGetProgramiv (program, GL_LINK_STATUS, &status)
@@ -379,16 +433,39 @@ cdef class OpenGLInterface:
             glDetachShader (program, vertShaderID)
             glDeleteShader (vertShaderID)
         
-        return program
+        self.shaderPrograms[name] = program
     
-    def useProgram2D (self, unsigned int program):
-        self.drawProgram2D = program
+    def unloadProgram (self, str name):
+        """W.unloadProgram (name)
+        
+        Frees up the previously loaded shader program specified by name."""
+        cdef GLuint programID
+        programID = self.shaderPrograms[name]
+        
+        glDeleteProgram (programID)
+        del self.shaderPrograms[name]
 
-    def useProgram3D (self, unsigned int program):
-        self.drawProgram3D = program
+    def useProgram2D (self, str name):
+        """W.useProgram2D (name)
+        
+        Specifies the OpenGL Shader Program to use for 2-dimensional
+        drawing by name."""
+        self.drawProgram2D = self.shaderPrograms[name]
+
+    def useProgram3D (self, str name):
+        """W.useProgram3D (name)
+        
+        Specifies the OpenGL Shader Program to use for 3-dimensional
+        drawing by name."""
+        self.drawProgram3D = self.shaderPrograms[name]
 
     # TODO: Finish these
     def loadTexture (self, str name, ImageSurface image):
+        """W.loadTexture (name, image)
+        
+        Transforms image into a texture and stores it into video memory, which
+        can then be referenced by name in future drawing operations."""
+        
         cdef GLuint newtex = 0
         cdef GLuint lastTexture = 0
 
@@ -400,8 +477,8 @@ cdef class OpenGLInterface:
         glBindTexture (GL_TEXTURE_2D, newtex)
 
         glPixelStorei (GL_UNPACK_ALIGNMENT, 1)
-        glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, image.width, image.height, 0, GL_RGBA,
-            GL_UNSIGNED_BYTE, image.data)
+        glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, image.width, image.height, 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, image.data)
         glGenerateMipmap (GL_TEXTURE_2D)
         glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
@@ -412,6 +489,9 @@ cdef class OpenGLInterface:
         self.textures[name] = newtex
 
     def unloadTexture (self, str name):
+        """W.unloadTexture (name)
+        
+        Frees up the previously loaded texture specified by name."""
         cdef GLuint textureID
         textureID = self.textures[name]
         
@@ -420,7 +500,13 @@ cdef class OpenGLInterface:
 
     def drawHud (self, str texture, float left, float top, float width,
     float height):
-        # TODO
+        """W.drawHud (texture, left, top, width, height)
+        
+        Draws a 2-dimensional HUD element on the screen, using the graphic
+        specified by texture. left and top are offsets from the edges from the
+        screen, with 1.0 being the right and bottom. width and height are
+        relative dimensions of the image to draw, with 1.0 being the full
+        screen size."""
         
         # 2D array for drawing sprites
         self.spriteBuffer[0:18] = [

@@ -76,7 +76,7 @@ def main ():
     
     screen = video.OpenGLInterface ("PyDoom", width, height, fullscreen, False)
     texture = video.ImageSurface (1, 1)
-    texture.setPixel (0, 0, 0x8000FFFF)
+    texture.setPixel (0, 0, (128, 0, 255, 255))
     
     tex = screen.loadTexture ("FIREBLU", texture)
     
