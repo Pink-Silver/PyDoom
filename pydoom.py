@@ -75,9 +75,10 @@ def main ():
     del args
     
     screen = video.OpenGLInterface ("PyDoom", width, height, fullscreen, False)
-    texture = video.ImageSurface ("SampleTexture", 10, 10)
+    texture = video.ImageSurface (1, 1)
+    texture.setPixel (0, 0, 0x8000FFFF)
     
-    tex = screen.loadTexture (1, 1, b"\x80\x00\xFF\xFF")
+    tex = screen.loadTexture ("FIREBLU", texture)
     
     prog = screen.compileProgram ("""#version 320 es
 
@@ -98,20 +99,22 @@ out vec2 UV;
 
 void main ()
 {
-	vec2 inPos_normal = inPos - vec2 (0.5,0.5);
-	inPos_normal /= vec2 (0.5,0.5);
-	gl_Position =  vec4 (inPos_normal,0,1);
-	
-	UV = inUV;
+    vec2 inPos_normal = inPos - vec2 (0.5,0.5);
+    inPos_normal /= vec2 (0.5,0.5);
+    gl_Position =  vec4 (inPos_normal,0,1);
+    
+    UV = inUV;
 }
 """)
     
     screen.useProgram2D (prog)
-    screen.drawHud (tex, 0.25, 0.25, 0.5, 0.5)
+    screen.drawHud ("FIREBLU", 0.25, 0, 0.5, 0.5)
     screen.swap ()
     
     from time import sleep
     sleep (5)
+    
+    screen.unloadTexture ("FIREBLU")
     
     del screen
     utility.shutdown ()

@@ -149,9 +149,63 @@ cdef extern from "<SDL.h>":
     const char *SDL_GetError ()
     void SDL_ClearError ()
 
+cdef class ImageSurface:
+    cdef size_t width
+    cdef size_t height
+    cdef unsigned char *data
+    
+    def __init__ (self, size_t width, size_t height):
+        if width < 1 or height < 1:
+            raise ValueError ("Image surface must have a valid width and height")
+        
+        self.width = width
+        self.height = height
+        cdef size_t arraysize = width * height * 4
+        
+        self.data = <unsigned char *> PyMem_Malloc (arraysize * sizeof (unsigned char))
+        
+        if self.data == NULL:
+            raise MemoryError ("Could not allocate memory for surface")
+        
+        cdef size_t i = 0
+        while i < arraysize:
+            self.data[i] = 0
+            i += 1
+    
+    cpdef unsigned int getPixel (self, size_t x, size_t y) except? 0:
+        if x < 0 or y < 0 or x > self.width or y > self.height:
+            return 0
+        
+        cdef size_t startofs = ((y * self.width) + x) * 4
+        
+        cdef unsigned int color = (
+                (self.data[startofs]     << 24) +
+                (self.data[startofs + 1] << 16) +
+                (self.data[startofs + 2] << 8) +
+                self.data[startofs + 3]
+            )
+        
+        return color
+    
+    cpdef void setPixel (self, size_t x, size_t y, unsigned int color = 0):
+        if x < 0 or y < 0 or x > self.width or y > self.height:
+            return
+        
+        cdef size_t startofs = ((y * self.width) + x) * 4
+        
+        self.data[startofs]     = (color >> 24) & 0xFF
+        self.data[startofs + 1] = (color >> 16) & 0xFF
+        self.data[startofs + 2] = (color >>  8) & 0xFF
+        self.data[startofs + 3] =  color        & 0xFF
+    
+    def __del__ (self):
+        PyMem_Free (self.data)
+
 cdef class OpenGLInterface:
     cdef SDL_Window *window
     cdef SDL_GLContext context
+    
+    cdef dict textures
     
     cdef float spriteBuffer[18]
     cdef float spriteBufferUVs[12]
@@ -168,6 +222,8 @@ cdef class OpenGLInterface:
         
         Creates a new OpenGL context window for rendering on.
         """
+        
+        self.textures = {}
         
         cdef int flags = SDL_WINDOW_OPENGL
         cdef GLenum glewstatus = 0
@@ -282,7 +338,9 @@ cdef class OpenGLInterface:
                 for i in range (0, infoLogLength):
                     infoLog[i] = b'\x00'
                 glGetShaderInfoLog (fragShaderID, infoLogLength, &outLogLength, infoLog)
-                raise RuntimeError ("Fragment shader failed to compile:\n" + str (infoLog, "utf8"))
+                infoLogStr = str (infoLog, "utf8")
+                PyMem_Free (infoLog)
+                raise RuntimeError ("Fragment shader failed to compile:\n" + infoLogStr)
         
         if vertShader is not None:
             vertShaderBytes = bytes (vertShader, "utf8")
@@ -299,7 +357,9 @@ cdef class OpenGLInterface:
                 for i in range (0, infoLogLength):
                     infoLog[i] = b'\x00'
                 glGetShaderInfoLog (vertShaderID, infoLogLength, &outLogLength, infoLog)
-                raise RuntimeError ("Vertex shader failed to compile:\n" + str (infoLog, "utf8"))
+                infoLogStr = str (infoLog, "utf8")
+                PyMem_Free (infoLog)
+                raise RuntimeError ("Vertex shader failed to compile:\n" + infoLogStr)
         
         glLinkProgram (program)
         glGetProgramiv (program, GL_LINK_STATUS, &status)
@@ -324,7 +384,7 @@ cdef class OpenGLInterface:
         self.drawProgram3D = program
 
     # TODO: Finish these
-    def loadTexture (self, int width, int height, const unsigned char *data):
+    def loadTexture (self, str name, ImageSurface image):
         cdef GLuint newtex = 0
         cdef GLuint lastTexture = 0
 
@@ -336,32 +396,36 @@ cdef class OpenGLInterface:
         glBindTexture (GL_TEXTURE_2D, newtex)
 
         glPixelStorei (GL_UNPACK_ALIGNMENT, 1)
-        glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
-            GL_UNSIGNED_BYTE, data)
+        glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, image.width, image.height, 0, GL_RGBA,
+            GL_UNSIGNED_BYTE, image.data)
         glGenerateMipmap (GL_TEXTURE_2D)
         glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
             GL_NEAREST_MIPMAP_NEAREST)
         
         glBindTexture (GL_TEXTURE_2D, lastTexture)
+        
+        self.textures[name] = newtex
 
-        return newtex
+    def unloadTexture (self, str name):
+        cdef GLuint textureID
+        textureID = self.textures[name]
+        
+        glDeleteTextures (1, &textureID)
+        del self.textures[name]
 
-    def unloadTexture (self, unsigned int tex):
-        glDeleteTextures (1, &tex)
-
-    def drawHud (self, unsigned int tex, float left, float top, float width,
+    def drawHud (self, str texture, float left, float top, float width,
     float height):
         # TODO
         
         # 2D array for drawing sprites
         self.spriteBuffer[0:18] = [
-            left+width, top+height, 0,
-            left+width, top, 0,
-            left, top, 0,
-            left, top, 0,
-            left, top+height, 0,
-            left+width, top+height, 0
+            left+width, 1.0 - (top+height), 0,
+            left+width, 1.0 - top, 0,
+            left, 1.0 - top, 0,
+            left, 1.0 - top, 0,
+            left, 1.0 -  (top+height), 0,
+            left+width, 1.0 - (top+height), 0
         ]
         
         # And UVs
@@ -376,7 +440,7 @@ cdef class OpenGLInterface:
         
         glUseProgram (self.drawProgram2D)
 
-        glBindTexture (GL_TEXTURE_2D, tex)
+        glBindTexture (GL_TEXTURE_2D, self.textures[texture])
         
         glEnableVertexAttribArray (0)
         
@@ -398,59 +462,3 @@ cdef class OpenGLInterface:
         
         glDisableVertexAttribArray(0)
         glDisableVertexAttribArray(1)
-
-cdef class ImageSurface:
-    cdef size_t width
-    cdef size_t height
-    cdef const char *name
-    cdef unsigned char *data
-    
-    def __init__ (self, str name, size_t width, size_t height):
-        if width < 1 or height < 1:
-            raise ValueError ("Image surface must have a valid width and height")
-        
-        encoded_name = bytes (name, "utf8")
-        
-        self.name = encoded_name
-        self.width = width
-        self.height = height
-        cdef size_t arraysize = width * height * 4
-        
-        self.data = <unsigned char *> PyMem_Malloc (arraysize * sizeof (unsigned char))
-        
-        if self.data == NULL:
-            raise MemoryError ("Could not allocate memory for surface")
-        
-        cdef size_t i = 0
-        while i < arraysize:
-            self.data[i] = 0
-            i += 1
-    
-    cpdef unsigned int getPixel (self, size_t x, size_t y) except? 0:
-        if x < 0 or y < 0 or x > self.width or y > self.height:
-            return 0
-        
-        cdef size_t startofs = ((y * self.width) + x) * 4
-        
-        cdef unsigned int color = (
-                (self.data[startofs]     << 24) +
-                (self.data[startofs + 1] << 16) +
-                (self.data[startofs + 2] << 8) +
-                self.data[startofs + 3]
-            )
-        
-        return color
-    
-    cpdef void setPixel (self, size_t x, size_t y, unsigned int color = 0):
-        if x < 0 or y < 0 or x > self.width or y > self.height:
-            return
-        
-        cdef size_t startofs = ((y * self.width) + x) * 4
-        
-        self.data[startofs]     = (color >> 24) & 0xFF
-        self.data[startofs + 1] = (color >> 16) & 0xFF
-        self.data[startofs + 2] = (color >>  8) & 0xFF
-        self.data[startofs + 3] =  color        & 0xFF
-    
-    def __del__ (self):
-        PyMem_Free (self.data)

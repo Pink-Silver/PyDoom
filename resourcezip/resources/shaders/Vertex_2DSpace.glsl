@@ -7,9 +7,9 @@ out vec2 UV;
 
 void main ()
 {
-	vec2 inPos_normal = inPos - vec2 (0.5,0.5);
-	inPos_normal /= vec2 (0.5,0.5);
-	gl_Position =  vec4 (inPos_normal,0,1);
-	
-	UV = inUV;
+    vec2 inPos_normal = inPos - vec2 (0.5,0.5);
+    inPos_normal /= vec2 (0.5,0.5);
+    gl_Position = vec4 (inPos_normal,0,1);
+    
+    UV = inUV;
 }
