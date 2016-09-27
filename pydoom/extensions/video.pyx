@@ -335,7 +335,7 @@ cdef class OpenGLInterface:
             if status != GL_TRUE:
                 glGetShaderiv (fragShaderID, GL_INFO_LOG_LENGTH, &infoLogLength)
                 infoLogStr = "unknown error"
-                if infoLogLength > 1:
+                if infoLogLength > 0:
                     infoLog = <char *> PyMem_Malloc (infoLogLength * sizeof (char))
                     for i in range (0, infoLogLength):
                         infoLog[i] = b'\x00'
