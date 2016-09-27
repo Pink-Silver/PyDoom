@@ -6,19 +6,41 @@
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 
+from cpython cimport array
+
 cdef extern from "defines.h":
     pass
 
-cdef extern from "<GL/glcorearb.h>":
+cdef extern from "<GL/gl.h>":
     ctypedef unsigned int GLenum
     ctypedef unsigned int GLuint
     ctypedef int GLint
     ctypedef int GLsizei
+    ctypedef ptrdiff_t GLintptr
     ctypedef char GLchar
+    ctypedef void GLvoid
+    ctypedef float GLfloat
+    ctypedef ptrdiff_t GLsizeiptr
+    ctypedef bint GLboolean
     
     enum:
         GL_TRUE
         GL_FALSE
+        
+        GL_FASTEST
+        GL_NICEST
+        GL_DONT_CARE
+        
+        GL_RGBA8
+        GL_RGBA
+        GL_UNSIGNED_BYTE
+        GL_FLOAT
+        
+        GL_NEAREST
+        GL_NEAREST_MIPMAP_NEAREST
+        
+        GL_GENERATE_MIPMAP_HINT
+        GL_UNPACK_ALIGNMENT
         
         GL_FRAGMENT_SHADER
         GL_VERTEX_SHADER
@@ -31,12 +53,27 @@ cdef extern from "<GL/glcorearb.h>":
         GL_DEPTH_BUFFER_BIT
         GL_STENCIL_BUFFER_BIT
         
-    void glClearColor (float red, float green, float blue, float alpha)
-    void glClear (int mask)
+        GL_TEXTURE_BINDING_2D
+        GL_TEXTURE_2D
+        GL_TEXTURE_MAG_FILTER
+        GL_TEXTURE_MIN_FILTER
+        
+        GL_ARRAY_BUFFER
+        GL_DYNAMIC_DRAW
+        
+        GL_TRIANGLES
+        
+    void glHint (GLenum target, GLenum mode)
+    
+    void glGetIntegerv (GLenum pname, GLint *params)
     
     GLuint glCreateShader (GLenum type)
-    void glShaderSource (GLuint shader, GLsizei count, const GLchar **string, const GLint *length)
+    void glShaderSource (GLuint shader, GLsizei count, const GLchar **string,
+        const GLint *length)
+    void glCompileShader (GLuint shader)
     void glGetShaderiv (GLuint shader, GLenum pname, GLint *params)
+    void glGetShaderInfoLog (GLuint shader, GLsizei maxLength, GLsizei *length,
+        GLchar *infoLog)
     void glDeleteShader (GLuint shader)
     
     GLuint glCreateProgram ()
@@ -45,7 +82,40 @@ cdef extern from "<GL/glcorearb.h>":
     void glLinkProgram (GLuint program)
     void glGetProgramiv (GLuint program, GLenum pname, GLint *params)
     void glDeleteProgram (GLuint program)
+    void glUseProgram (GLuint program)
+
+    void glClearColor (float red, float green, float blue, float alpha)
+    void glClear (int mask)
     
+    void glGenTextures (GLsizei n, GLuint *textures)
+    void glBindTexture (GLenum target, GLuint texture)
+    void glTexImage2D (GLenum target, GLint level, GLint internalformat,
+        GLsizei width, GLsizei height, GLint border, GLenum format,
+        GLenum type, const GLvoid *data)
+    void glTexParameteri (GLenum target, GLenum pname, GLint param)
+    void glPixelStorei (GLenum pname, GLint param)
+    void glGenerateMipmap (GLenum target)
+    void glDeleteTextures (GLsizei n, const GLuint *textures)
+    
+    void glGenBuffers (GLsizei n, GLuint *buffers)
+    void glBufferData (GLenum target, GLsizeiptr size, const GLvoid *data,
+        GLenum usage)
+    void glBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size,
+        const GLvoid *data)
+    void glBindBuffer (GLenum target, GLuint buffer)
+    
+    void glEnableVertexAttribArray (GLuint index)
+    void glDisableVertexAttribArray (GLuint index)
+    void glVertexAttribPointer (GLuint index, GLint size, GLenum type,
+        GLboolean normalized, GLsizei stride, const GLvoid *pointer)
+    void glDrawArrays (GLenum mode, GLint first, GLsizei count)
+    
+    void glFinish ()
+    GLenum glGetError ()
+    
+cdef extern from "<GL/glext.h>":
+    pass
+
 cdef extern from "<SDL.h>":
     ctypedef struct SDL_Window:
         pass
@@ -83,7 +153,13 @@ cdef class OpenGLInterface:
     cdef SDL_Window *window
     cdef SDL_GLContext context
     
-    cdef GLuint drawing_program
+    cdef float spriteBuffer[18]
+    cdef float spriteBufferUVs[12]
+    cdef GLuint spriteBufferID
+    cdef GLuint spriteBufferUVsID
+    
+    cdef GLuint drawProgram2D
+    cdef GLuint drawProgram3D
     
     def __init__ (self, str title = "PyDoom", int width = 640,
     int height = 480, bint fullscreen = False, bint fullwindow = False,
@@ -105,7 +181,7 @@ cdef class OpenGLInterface:
         SDL_GL_SetAttribute (SDL_GL_MULTISAMPLEBUFFERS, 1)
         SDL_GL_SetAttribute (SDL_GL_MULTISAMPLESAMPLES, 4)
         SDL_GL_SetAttribute (SDL_GL_CONTEXT_MAJOR_VERSION, 3)
-        SDL_GL_SetAttribute (SDL_GL_CONTEXT_MINOR_VERSION, 0)
+        SDL_GL_SetAttribute (SDL_GL_CONTEXT_MINOR_VERSION, 2)
         SDL_GL_SetAttribute (SDL_GL_CONTEXT_PROFILE_MASK,
             SDL_GL_CONTEXT_PROFILE_ES)
         
@@ -135,6 +211,29 @@ cdef class OpenGLInterface:
             SDL_ClearError ()
             raise RuntimeError (str (err, "utf8"))
         
+        # Initial hints and setup
+        glHint (GL_GENERATE_MIPMAP_HINT, GL_NICEST)
+        
+        self.spriteBuffer = <float *> PyMem_Malloc (18 * sizeof (float))
+        cdef int i = 0
+        while i < 18:
+            self.spriteBuffer[i] = 0
+            i += 1
+        i = 0
+        while i < 12:
+            self.spriteBufferUVs[i] = 0
+            i += 1
+        
+        glGenBuffers (1, &self.spriteBufferID)
+        glBindBuffer (GL_ARRAY_BUFFER, self.spriteBufferID)
+        glBufferData (GL_ARRAY_BUFFER, 18 * sizeof (float),
+            <const void *>self.spriteBuffer, GL_DYNAMIC_DRAW)
+
+        glGenBuffers (1, &self.spriteBufferUVsID)
+        glBindBuffer (GL_ARRAY_BUFFER, self.spriteBufferUVsID)
+        glBufferData (GL_ARRAY_BUFFER, 12 * sizeof (float),
+            <const void *>self.spriteBufferUVs, GL_DYNAMIC_DRAW)
+        
         # Clear to black
         glClearColor (0.0, 0.0, 0.0, 0.0)
         
@@ -151,6 +250,7 @@ cdef class OpenGLInterface:
         glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
     
     def swap (self):
+        glFinish ()
         SDL_GL_SwapWindow (self.window)
     
     def compileProgram (self, fragShader = None, vertShader = None) -> int:
@@ -161,26 +261,51 @@ cdef class OpenGLInterface:
         cdef const char *fragShaderSource = NULL
         cdef const char *vertShaderSource = NULL
         
+        cdef int infoLogLength = 0
+        cdef char *infoLog = NULL
+        cdef int outLogLength = 0
+        
         program = glCreateProgram ()
         
         if fragShader is not None:
             fragShaderBytes = bytes (fragShader, "utf8")
             fragShaderSource = fragShaderBytes
             fragShaderID = glCreateShader (GL_FRAGMENT_SHADER)
-            glShaderSource (fragShaderID, 1, <const GLchar **> fragShaderSource, NULL)
+            glShaderSource (fragShaderID, 1, &fragShaderSource, NULL)
+            glCompileShader (fragShaderID)
             glGetShaderiv (fragShaderID, GL_COMPILE_STATUS, &status)
             glAttachShader (program, fragShaderID)
+
+            if status != GL_TRUE:
+                glGetShaderiv (fragShaderID, GL_INFO_LOG_LENGTH, &infoLogLength)
+                infoLog = <char *> PyMem_Malloc (infoLogLength * sizeof (char))
+                for i in range (0, infoLogLength):
+                    infoLog[i] = b'\x00'
+                glGetShaderInfoLog (fragShaderID, infoLogLength, &outLogLength, infoLog)
+                raise RuntimeError ("Fragment shader failed to compile:\n" + str (infoLog, "utf8"))
         
         if vertShader is not None:
             vertShaderBytes = bytes (vertShader, "utf8")
             vertShaderSource = vertShaderBytes
             vertShaderID = glCreateShader (GL_VERTEX_SHADER)
-            glShaderSource (vertShaderID, 1, <const GLchar **> vertShaderSource, NULL)
+            glShaderSource (vertShaderID, 1, &vertShaderSource, NULL)
+            glCompileShader (vertShaderID)
             glGetShaderiv (vertShaderID, GL_COMPILE_STATUS, &status)
             glAttachShader (program, vertShaderID)
+
+            if status != GL_TRUE:
+                glGetShaderiv (vertShaderID, GL_INFO_LOG_LENGTH, &infoLogLength)
+                infoLog = <char *> PyMem_Malloc (infoLogLength * sizeof (char))
+                for i in range (0, infoLogLength):
+                    infoLog[i] = b'\x00'
+                glGetShaderInfoLog (vertShaderID, infoLogLength, &outLogLength, infoLog)
+                raise RuntimeError ("Vertex shader failed to compile:\n" + str (infoLog, "utf8"))
         
         glLinkProgram (program)
         glGetProgramiv (program, GL_LINK_STATUS, &status)
+
+        if status != GL_TRUE:
+            raise RuntimeError ("Shader program did not link properly")
         
         if fragShader is not None:
             glDetachShader (program, fragShaderID)
@@ -192,52 +317,87 @@ cdef class OpenGLInterface:
         
         return program
     
-    def useProgram (self, unsigned int program):
-        self.drawing_program = program
+    def useProgram2D (self, unsigned int program):
+        self.drawProgram2D = program
+
+    def useProgram3D (self, unsigned int program):
+        self.drawProgram3D = program
 
     # TODO: Finish these
-    #~ unsigned int vid_loadtexture (int width, int height, const unsigned char *data)
-    #~ {
-        #~ GLuint newtex;
-        #~ GLuint lastTexture = 0;
+    def loadTexture (self, int width, int height, const unsigned char *data):
+        cdef GLuint newtex = 0
+        cdef GLuint lastTexture = 0
 
-        #~ // Image data is assumed provided to us as RGBA8.
+        # Image data is assumed provided to us as RGBA8.
 
-        #~ glGetIntegerv (GL_TEXTURE_BINDING_2D, (GLint*) &lastTexture);
+        glGetIntegerv (GL_TEXTURE_BINDING_2D, <GLint*> &lastTexture)
 
-        #~ glGenTextures (1, &newtex);
-        #~ glBindTexture (GL_TEXTURE_2D, newtex);
+        glGenTextures (1, &newtex)
+        glBindTexture (GL_TEXTURE_2D, newtex)
 
-        #~ glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
-        #~ glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
-            #~ GL_UNSIGNED_BYTE, data);
-        #~ glGenerateMipmap (GL_TEXTURE_2D);
-        #~ glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        #~ glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-            #~ GL_NEAREST_MIPMAP_NEAREST);
+        glPixelStorei (GL_UNPACK_ALIGNMENT, 1)
+        glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
+            GL_UNSIGNED_BYTE, data)
+        glGenerateMipmap (GL_TEXTURE_2D)
+        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+            GL_NEAREST_MIPMAP_NEAREST)
         
-        #~ if (GL_EXT_texture_filter_anisotropic)
-        #~ {
-            #~ GLfloat animax;
-            #~ glGetFloatv (GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &animax);
-            #~ glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, animax);
-        #~ }
+        glBindTexture (GL_TEXTURE_2D, lastTexture)
+
+        return newtex
+
+    def unloadTexture (self, unsigned int tex):
+        glDeleteTextures (1, &tex)
+
+    def drawHud (self, unsigned int tex, float left, float top, float width,
+    float height):
+        # TODO
         
-        #~ glBindTexture (GL_TEXTURE_2D, lastTexture);
+        # 2D array for drawing sprites
+        self.spriteBuffer[0:18] = [
+            left+width, top+height, 0,
+            left+width, top, 0,
+            left, top, 0,
+            left, top, 0,
+            left, top+height, 0,
+            left+width, top+height, 0
+        ]
+        
+        # And UVs
+        self.spriteBufferUVs[0:12] = [
+            1, 0,
+            1, 1,
+            0, 1,
+            0, 1,
+            0, 0,
+            1, 0
+        ]
+        
+        glUseProgram (self.drawProgram2D)
 
-        #~ return newtex;
-    #~ }
+        glBindTexture (GL_TEXTURE_2D, tex)
+        
+        glEnableVertexAttribArray (0)
+        
+        glBindBuffer (GL_ARRAY_BUFFER, self.spriteBufferID)
+        glBufferSubData (GL_ARRAY_BUFFER, 0,
+            18 * sizeof(float),
+            <const GLvoid *>self.spriteBuffer)
+        glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 0, <void *>0)
 
-    #~ void vid_unloadtexture (unsigned int tex)
-    #~ {
-        #~ glDeleteTextures (1, &tex);
-    #~ }
+        glEnableVertexAttribArray (1)
 
-    #~ void vid_draw2d (unsigned int tex, float left, float top, float width,
-        #~ float height)
-    #~ {
-        #~ glBindTexture (GL_TEXTURE_2D, tex);
-    #~ }
+        glBindBuffer (GL_ARRAY_BUFFER, self.spriteBufferUVsID)
+        glBufferSubData (GL_ARRAY_BUFFER, 0,
+            12 * sizeof(float),
+            <const GLvoid *>self.spriteBufferUVs)
+        glVertexAttribPointer (1, 2, GL_FLOAT, GL_FALSE, 0, <void *>0)
+        
+        glDrawArrays(GL_TRIANGLES, 0, 6)
+        
+        glDisableVertexAttribArray(0)
+        glDisableVertexAttribArray(1)
 
 cdef class ImageSurface:
     cdef size_t width

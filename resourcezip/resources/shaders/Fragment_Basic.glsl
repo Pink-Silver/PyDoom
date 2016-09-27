@@ -1,10 +1,11 @@
-#version 330 core
+#version 320 es
 
+precision mediump float;
 in vec2 UV;
 out vec4 color;
-uniform sampler2D myTextureSampler;
+uniform sampler2D sampler;
 
 void main ()
 {
-	color = texture2D (TextureSample, UV);
+    color = texture (sampler, UV).rgba;
 }

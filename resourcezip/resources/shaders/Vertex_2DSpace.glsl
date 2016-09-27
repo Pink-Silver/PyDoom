@@ -1,8 +1,9 @@
-#version 330 core
+#version 320 es
 
+precision mediump float;
 layout (location = 0) in vec2 inPos;
 layout (location = 1) in vec2 inUV;
-out vec2 outUV;
+out vec2 UV;
 
 void main ()
 {
@@ -10,5 +11,5 @@ void main ()
 	inPos_normal /= vec2 (0.5,0.5);
 	gl_Position =  vec4 (inPos_normal,0,1);
 	
-	outUV = inUV;
+	UV = inUV;
 }
