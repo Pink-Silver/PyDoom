@@ -334,12 +334,14 @@ cdef class OpenGLInterface:
 
             if status != GL_TRUE:
                 glGetShaderiv (fragShaderID, GL_INFO_LOG_LENGTH, &infoLogLength)
-                infoLog = <char *> PyMem_Malloc (infoLogLength * sizeof (char))
-                for i in range (0, infoLogLength):
-                    infoLog[i] = b'\x00'
-                glGetShaderInfoLog (fragShaderID, infoLogLength, &outLogLength, infoLog)
-                infoLogStr = str (infoLog, "utf8")
-                PyMem_Free (infoLog)
+                infoLogStr = "unknown error"
+                if infoLogLength > 1:
+                    infoLog = <char *> PyMem_Malloc (infoLogLength * sizeof (char))
+                    for i in range (0, infoLogLength):
+                        infoLog[i] = b'\x00'
+                    glGetShaderInfoLog (fragShaderID, infoLogLength, &outLogLength, infoLog)
+                    infoLogStr = str (infoLog, "utf8")
+                    PyMem_Free (infoLog)
                 raise RuntimeError ("Fragment shader failed to compile:\n" + infoLogStr)
         
         if vertShader is not None:
@@ -353,12 +355,14 @@ cdef class OpenGLInterface:
 
             if status != GL_TRUE:
                 glGetShaderiv (vertShaderID, GL_INFO_LOG_LENGTH, &infoLogLength)
-                infoLog = <char *> PyMem_Malloc (infoLogLength * sizeof (char))
-                for i in range (0, infoLogLength):
-                    infoLog[i] = b'\x00'
-                glGetShaderInfoLog (vertShaderID, infoLogLength, &outLogLength, infoLog)
-                infoLogStr = str (infoLog, "utf8")
-                PyMem_Free (infoLog)
+                infoLogStr = "unknown error"
+                if infoLogLength > 0:
+                    infoLog = <char *> PyMem_Malloc (infoLogLength * sizeof (char))
+                    for i in range (0, infoLogLength):
+                        infoLog[i] = b'\x00'
+                    glGetShaderInfoLog (vertShaderID, infoLogLength, &outLogLength, infoLog)
+                    infoLogStr = str (infoLog, "utf8")
+                    PyMem_Free (infoLog)
                 raise RuntimeError ("Vertex shader failed to compile:\n" + infoLogStr)
         
         glLinkProgram (program)
