@@ -17,9 +17,8 @@ from os import mkdir, sep
 
 # Dummy to return the current directory, in case we don't know what platform
 # we're on.
-def findProgramDirectory ():
-    """findProgramDirectory () -> str
-    Returns the program directory used for searching for configuration
+def findProgramDirectory () -> str:
+    """Returns the program directory used for searching for configuration
     files."""
     return argv[0].rpartition(sep)[0]
 

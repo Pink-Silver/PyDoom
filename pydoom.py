@@ -51,8 +51,12 @@ def main ():
     args.CollectArgs ()
 
     loadSystemConfig ()
-
-    mainResource = ResourceZip ("PyDoomResource.zip")
+    try:
+        mainResource = ResourceZip ("PyDoomResource.zip")
+    except FileNotFoundError:
+        masterlog.error ("Could not open PyDoomResource.zip!\nIf you're building from source, please run MakeZip.py to build it.")
+        exit (1)
+    
     games = mainResource.game_modules
 
     width, height = (640, 480)

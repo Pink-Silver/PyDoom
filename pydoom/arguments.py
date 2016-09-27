@@ -13,6 +13,7 @@ log = getLogger ("PyDoom.CommandLine")
 class ArgumentParser:
     """A reader for command-line arguments passed to the game."""
     def __init__ (self, arglist):
+        """Creates a new ArgumentParser."""
         self.args = arglist
 
         # Files
@@ -71,11 +72,18 @@ class ArgumentParser:
             log.warning ("  Proper use: {}".format (parsefunc.__doc__))
 
     def ParseOpt_game (self, game):
-        "-game gamename"
+        """-game gamename
+        
+        Specifies the game to play."""
+        
         self.game = game
 
     def ParseOpt_file (self, *files):
-        "-file file1.wad[, file2.wad[, ...]]"
+        """-file file1.wad[, file2.zip[, ...]]
+        
+        Specifies external files to load additional resources (levels, etc.)
+        from."""
+        
         global log
 
         if not files:
@@ -89,21 +97,38 @@ class ArgumentParser:
             self.files.append (f)
 
     def ParseOpt_fullscreen (self):
-        "-fullscreen"
+        """-fullscreen
+        
+        If given, the game will start in fullscreen mode."""
+        
         self.fullscreen = True
 
     def ParseOpt_windowed (self):
-        "-windowed"
+        """-windowed
+        
+        If specified, the game will start in windowed mode."""
+        
         self.fullscreen = False
 
     def ParseOpt_width (self, width):
-        "-width screenwidth"
+        """-width screenwidth
+        
+        Sets the width of the window in windowed, or the horizontal screen
+        resolution in fullscreen."""
+        
         self.resolution[0] = int (width)
 
     def ParseOpt_height (self, height):
-        "-height screenheight"
+        """-height screenheight
+        
+        Sets the height of the window in windowed, or the vertical screen
+        resolution in fullscreen."""
+        
         self.resolution[1] = int (height)
 
     def ParseOpt_renderer (self, rendertype):
-        "-renderer software|opengl"
+        """-renderer software|opengl
+        
+        (Not currently used) Specifies which renderer to use."""
+        
         self.renderer = rendertype

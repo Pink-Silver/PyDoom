@@ -15,6 +15,7 @@ from os.path import join as joinpath
 resourcelog = logging.getLogger("PyDoom.Resource")
 
 def MeasureSize (size):
+    """Returns a size in bytes as a human-readable number."""
     sizetable = (
         ("TB", 1024 ** 4),
         ("GB", 1024 ** 3),

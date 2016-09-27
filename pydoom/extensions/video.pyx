@@ -6,7 +6,10 @@
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 
-cdef extern from *: # GL/gl.h
+cdef extern from "defines.h":
+    pass
+
+cdef extern from "<GL/glcorearb.h>":
     ctypedef unsigned int GLenum
     ctypedef unsigned int GLuint
     ctypedef int GLint
@@ -19,7 +22,6 @@ cdef extern from *: # GL/gl.h
         
         GL_FRAGMENT_SHADER
         GL_VERTEX_SHADER
-        GL_GEOMETRY_SHADER
         
         GL_COMPILE_STATUS
         GL_LINK_STATUS
@@ -43,12 +45,6 @@ cdef extern from *: # GL/gl.h
     void glLinkProgram (GLuint program)
     void glGetProgramiv (GLuint program, GLenum pname, GLint *params)
     void glDeleteProgram (GLuint program)
-
-cdef extern from "<GL/glew.h>":
-    int glewInit ()
-    enum:
-        GLEW_OK
-        GLEW_VERSION_3_3
     
 cdef extern from "<SDL.h>":
     ctypedef struct SDL_Window:
@@ -68,7 +64,7 @@ cdef extern from "<SDL.h>":
         SDL_GL_CONTEXT_MAJOR_VERSION
         SDL_GL_CONTEXT_MINOR_VERSION
         SDL_GL_CONTEXT_PROFILE_MASK
-        SDL_GL_CONTEXT_PROFILE_CORE
+        SDL_GL_CONTEXT_PROFILE_ES
     
     int SDL_WINDOWPOS_CENTERED_DISPLAY (int display)
     
@@ -92,7 +88,7 @@ cdef class OpenGLInterface:
     def __init__ (self, str title = "PyDoom", int width = 640,
     int height = 480, bint fullscreen = False, bint fullwindow = False,
     int display = 0, int x = -1, int y = -1):
-        """OpenGLInterface (title = "PyDoom", width = 640, height = 480, fullscreen = False, fullwindow = False, display = 0, x = -1, y = -1)
+        """OpenGLInterface (title: str = "PyDoom", width: int = 640, height: int = 480, fullscreen: bool = False, fullwindow: bool = False, display: int = 0, x: int = -1, y: int = -1)
         
         Creates a new OpenGL context window for rendering on.
         """
@@ -109,9 +105,9 @@ cdef class OpenGLInterface:
         SDL_GL_SetAttribute (SDL_GL_MULTISAMPLEBUFFERS, 1)
         SDL_GL_SetAttribute (SDL_GL_MULTISAMPLESAMPLES, 4)
         SDL_GL_SetAttribute (SDL_GL_CONTEXT_MAJOR_VERSION, 3)
-        SDL_GL_SetAttribute (SDL_GL_CONTEXT_MINOR_VERSION, 3)
+        SDL_GL_SetAttribute (SDL_GL_CONTEXT_MINOR_VERSION, 0)
         SDL_GL_SetAttribute (SDL_GL_CONTEXT_PROFILE_MASK,
-            SDL_GL_CONTEXT_PROFILE_CORE)
+            SDL_GL_CONTEXT_PROFILE_ES)
         
         if x < 0:
             x = SDL_WINDOWPOS_CENTERED_DISPLAY (display)
@@ -139,14 +135,6 @@ cdef class OpenGLInterface:
             SDL_ClearError ()
             raise RuntimeError (str (err, "utf8"))
         
-        glewstatus = glewInit ()
-        
-        if glewstatus is not GLEW_OK:
-            raise RuntimeError ("GLEW did not initialize properly")
-        
-        if not GLEW_VERSION_3_3:
-            raise RuntimeError ("GLEW must be at least version 3.3")
-        
         # Clear to black
         glClearColor (0.0, 0.0, 0.0, 0.0)
         
@@ -165,14 +153,13 @@ cdef class OpenGLInterface:
     def swap (self):
         SDL_GL_SwapWindow (self.window)
     
-    def compileProgram (self, fragShader = None, vertShader = None, geomShader = None):
+    def compileProgram (self, fragShader = None, vertShader = None) -> int:
         cdef GLuint program = 0
         cdef GLint status = GL_FALSE
-        cdef GLuint fragShaderID, vertShaderID, geomShaderID
+        cdef GLuint fragShaderID = 0, vertShaderID = 0
         
         cdef const char *fragShaderSource = NULL
         cdef const char *vertShaderSource = NULL
-        cdef const char *geomShaderSource = NULL
         
         program = glCreateProgram ()
         
@@ -192,14 +179,6 @@ cdef class OpenGLInterface:
             glGetShaderiv (vertShaderID, GL_COMPILE_STATUS, &status)
             glAttachShader (program, vertShaderID)
         
-        if geomShader is not None:
-            geomShaderBytes = bytes (geomShader, "utf8")
-            geomShaderSource = geomShaderBytes
-            geomShaderID = glCreateShader (GL_GEOMETRY_SHADER)
-            glShaderSource (geomShaderID, 1, <const GLchar **> geomShaderSource, NULL)
-            glGetShaderiv (geomShaderID, GL_COMPILE_STATUS, &status)
-            glAttachShader (program, geomShaderID)
-        
         glLinkProgram (program)
         glGetProgramiv (program, GL_LINK_STATUS, &status)
         
@@ -210,10 +189,6 @@ cdef class OpenGLInterface:
         if vertShader is not None:
             glDetachShader (program, vertShaderID)
             glDeleteShader (vertShaderID)
-        
-        if geomShader is not None:
-            glDetachShader (program, geomShaderID)
-            glDeleteShader (geomShaderID)
         
         return program
     
