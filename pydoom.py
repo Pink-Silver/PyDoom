@@ -80,7 +80,7 @@ def main ():
     
     tex = screen.loadTexture ("FIREBLU", texture)
     
-    prog = screen.compileProgram ("""#version 320 es
+    prog = screen.compileProgram ("2DBasic", """#version 320 es
 
 precision mediump float;
 in vec2 UV;
@@ -107,7 +107,7 @@ void main ()
 }
 """)
     
-    screen.useProgram2D (prog)
+    screen.useProgram2D ("2DBasic")
     screen.drawHud ("FIREBLU", 0.25, 0, 0.5, 0.5)
     screen.swap ()
     
