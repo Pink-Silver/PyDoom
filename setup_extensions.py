@@ -29,32 +29,41 @@ if sys.platform == "win32":
 setup (
     name = 'PyDoom rendering module',
     ext_modules = cythonize (
-        [
-            Extension (
-                "pydoom.extensions.video",
-                ["pydoom/extensions/video.pyx"],
-                include_dirs = [
-                    sdl_dir,
+            [
+                Extension (
+                    "pydoom.video",
+                    ["pydoom/video.pyx"],
+                    include_dirs = [
+                        sdl_dir,
                     ],
-                libraries = [
-                    opengl_lib,
-                    sdl_lib,
-                    sdlmain_lib,
-                    sdltest_lib,
+                    libraries = [
+                        opengl_lib,
+                        sdl_lib,
+                        sdlmain_lib,
+                        sdltest_lib,
                     ]
                 ),
-        
-            Extension (
-                "pydoom.extensions.utility",
-                ["pydoom/extensions/utility.pyx"],
-                include_dirs = [
-                    sdl_dir
+                
+                Extension (
+                    "pydoom.utility",
+                    ["pydoom/utility.pyx"],
+                    include_dirs = [
+                        sdl_dir
                     ],
-                libraries = [
-                    sdl_lib,
-                    sdlmain_lib,
-                    sdltest_lib,
+                    libraries = [
+                        sdl_lib,
+                        sdlmain_lib,
+                        sdltest_lib,
                     ]
+                ),
+                
+                Extension (
+                    "pydoom.resources",
+                    ["pydoom/resources.pyx"]
+                ),
+                Extension (
+                    "pydoom.wadfile",
+                    ["pydoom/wadfile.pyx"]
                 )
             ]
         )

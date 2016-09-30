@@ -33,10 +33,11 @@ try:
 except ImportError:
     pass
 from pydoom.configuration import loadSystemConfig
-from pydoom.resources import ResourceZip
+from pydoom.resources import ResourceArchive
 from sys import argv, exit
-import pydoom.extensions.video as video
-import pydoom.extensions.utility as utility
+import pydoom.video as video
+import pydoom.utility as utility
+import pydoom.wadfile as wadfile
 
 def main ():
     global masterlog
@@ -52,7 +53,7 @@ def main ():
 
     loadSystemConfig ()
     try:
-        mainResource = ResourceZip ("PyDoomResource.zip")
+        mainResource = ResourceArchive ("PyDoomResource.zip")
     except FileNotFoundError:
         masterlog.error ("Could not open PyDoomResource.zip!\nIf you're building from source, please run MakeZip.py to build it.")
         exit (1)

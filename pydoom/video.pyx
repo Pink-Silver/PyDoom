@@ -1,3 +1,6 @@
+#!python3
+#cython: language_level=3
+
 # Copyright (c) 2014, Kate Fox
 # All rights reserved.
 #
@@ -5,8 +8,10 @@
 # See the LICENSE file in this program's distribution for details.
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
+from libc.string cimport memcpy
 
 from cpython cimport array
+import array
 
 cdef extern from "defines.h":
     pass
@@ -81,6 +86,8 @@ cdef extern from "<GL/gl.h>":
     void glDetachShader (GLuint program, GLuint shader)
     void glLinkProgram (GLuint program)
     void glGetProgramiv (GLuint program, GLenum pname, GLint *params)
+    void glGetProgramInfoLog (GLuint program, GLsizei maxLength,
+        GLsizei *length, GLchar *infoLog)
     void glDeleteProgram (GLuint program)
     void glUseProgram (GLuint program)
     void glDeleteProgram (GLuint program)
@@ -154,7 +161,17 @@ cdef extern from "<SDL.h>":
 cdef class ImageSurface:
     cdef size_t width
     cdef size_t height
+    cdef public int xoffset
+    cdef public int yoffset
     cdef unsigned char *data
+    
+    @property
+    def width (self):
+        return self.width
+
+    @property
+    def height (self):
+        return self.height
 
     def __cinit__ (self, size_t width, size_t height):
         """Provides C-level allocation of data structures."""
@@ -178,6 +195,11 @@ height")
             self.data[i] = 0
             i += 1
     
+    def __dealloc__ (self):
+        """Implements ImageSurface deletion."""
+        
+        PyMem_Free (self.data)
+
     def __init__ (self, size_t width, size_t height):
         """ImageSurface (width, height) -> ImageSurface
         
@@ -216,15 +238,136 @@ height")
         
         cdef size_t startofs = ((y * self.width) + x) * 4
         
-        self.data[startofs]     = color[0] & 0xFF
-        self.data[startofs + 1] = color[1] & 0xFF
-        self.data[startofs + 2] = color[2] & 0xFF
-        self.data[startofs + 3] = color[3] & 0xFF
+        self.data[startofs]     = color[0]
+        self.data[startofs + 1] = color[1]
+        self.data[startofs + 2] = color[2]
+        self.data[startofs + 3] = color[3]
     
-    def __dealloc__ (self):
-        """Implements ImageSurface deletion."""
+    cdef void setPixelDirect (self, size_t x, size_t y, unsigned int color):
+        if x < 0 or y < 0 or x > self.width or y > self.height:
+            return
         
-        PyMem_Free (self.data)
+        cdef size_t startofs = ((y * self.width) + x) * 4
+        
+        self.data[startofs]     = (color & 0xFF000000U) >> 24
+        self.data[startofs + 1] = (color & 0x00FF0000U) >> 16
+        self.data[startofs + 2] = (color & 0x0000FF00U) >> 8
+        self.data[startofs + 3] = (color & 0x000000FFU)
+    
+    ### Image Readers ###
+
+    @classmethod
+    def LoadDoomGraphic (cls, bytes bytebuffer, palette):
+        """Loads a top-down column-based paletted doom graphic, given the
+        graphic's binary data and a palette. Returns an Image usable
+        with the OpenGL context."""
+        cdef int pos = 0
+        
+        cdef short width, height, xofs, yofs
+        
+        cdef size_t bytebuflen = len(bytebuffer)
+        cdef unsigned char *rawbuffer = <unsigned char *> PyMem_Malloc (bytebuflen)
+        cdef const char *bytebuftemp = bytebuffer
+        
+        memcpy (<void *>rawbuffer, <const void *>bytebuftemp, bytebuflen)
+        
+        width = rawbuffer[pos+0]
+        width |= rawbuffer[pos+1] << 8
+        pos += 2
+
+        height = rawbuffer[pos+0]
+        height |= rawbuffer[pos+1] << 8
+        pos += 2
+        
+        xofs = rawbuffer[pos+0]
+        xofs |= rawbuffer[pos+1] << 8
+        pos += 2
+
+        yofs = rawbuffer[pos+0]
+        yofs |= rawbuffer[pos+1] << 8
+        pos += 2
+
+        cdef ImageSurface image = cls (width, height)
+        
+        image.xoffset = xofs
+        image.yoffset = yofs
+
+        colheaders = []
+
+        cdef unsigned int byte_ofs
+        cdef int column
+        
+        cdef int lastrowstart
+        cdef int rowstart
+        cdef int byteofs
+        cdef int columnlength
+        cdef int palindex
+        cdef int rowpos
+        
+        # The headers for each column
+        for colheader in range (width):
+            byte_ofs = rawbuffer[pos+0]
+            byte_ofs |= rawbuffer[pos+1]
+            byte_ofs |= rawbuffer[pos+2]
+            byte_ofs |= rawbuffer[pos+3]
+            colheaders.append (byte_ofs)
+            pos += 4
+
+        # Okay, so in the standard graphic format, if the last row
+        # started in the same column is above or at the height last
+        # drawn, they'd usually be drawn above or on top of the column
+        # we just drew (which would be a waste of space since we're just
+        # drawing on top of pixels we've *just* drawn).
+
+        # Instead, what we do is *add* the last offset to our current
+        # one, so we're always drawing in new space instead. This gives
+        # us twice the column height to work with, allowing graphic
+        # columns to start from up to the 512th row instead of the
+        # 256th. This means transparent images that are > 256 in height
+        # won't corrupt.
+
+        for column in range (width):
+            lastrowstart = -1
+            rowstart = 0
+            byteofs = colheaders[column]
+            while True:
+                rowstart = rawbuffer[byteofs]
+                byteofs += 1
+
+                if rowstart == 255:
+                    # No more pieces to draw, go to next column
+                    break
+
+                if rowstart <= lastrowstart:
+                    rowstart += lastrowstart
+
+                columnlength = rawbuffer[byteofs]
+                byteofs += 2
+
+                for rowpos in range (columnlength):
+                    palindex = rawbuffer[byteofs]
+                    byteofs += 1
+
+                    palcolor = palette.colors[palindex]
+                    image.setPixelDirect (column, rowpos + rowstart, palcolor)
+
+                byteofs += 1
+                lastrowstart = rowstart
+
+        PyMem_Free (rawbuffer)
+        return image
+
+    @classmethod
+    def LoadPNG (cls, bytebuffer):
+        """Loads a Portable Network Graphic."""
+
+        #decompressor = zlib.decompressobj ()
+
+        if bytebuffer[0:8] != b'\x89PNG\r\n\x1a\n':
+            raise ValueError ("The PNG header is corrupted")
+
+        # TODO
+        pass
 
 cdef class OpenGLInterface:
     cdef SDL_Window *window
@@ -368,62 +511,73 @@ cdef class OpenGLInterface:
         cdef int outLogLength = 0
         
         program = glCreateProgram ()
-        
-        if fragShader is not None:
-            fragShaderBytes = bytes (fragShader, "utf8")
-            fragShaderSource = fragShaderBytes
-            fragShaderID = glCreateShader (GL_FRAGMENT_SHADER)
-            glShaderSource (fragShaderID, 1, &fragShaderSource, NULL)
-            glCompileShader (fragShaderID)
-            glGetShaderiv (fragShaderID, GL_COMPILE_STATUS, &status)
-            glAttachShader (program, fragShaderID)
 
-            if status != GL_TRUE:
-                glGetShaderiv (fragShaderID, GL_INFO_LOG_LENGTH,
-                    &infoLogLength)
-                infoLogStr = "unknown error"
-                if infoLogLength > 0:
-                    infoLog = <char *> PyMem_Malloc (infoLogLength *
-                        sizeof (char))
-                    for i in range (0, infoLogLength):
-                        infoLog[i] = b'\x00'
-                    glGetShaderInfoLog (fragShaderID, infoLogLength,
-                        &outLogLength, infoLog)
-                    infoLogStr = str (infoLog, "utf8")
-                    PyMem_Free (infoLog)
-                raise RuntimeError ("Fragment shader failed to compile:\n" +
-                    infoLogStr)
-        
-        if vertShader is not None:
-            vertShaderBytes = bytes (vertShader, "utf8")
-            vertShaderSource = vertShaderBytes
-            vertShaderID = glCreateShader (GL_VERTEX_SHADER)
-            glShaderSource (vertShaderID, 1, &vertShaderSource, NULL)
-            glCompileShader (vertShaderID)
-            glGetShaderiv (vertShaderID, GL_COMPILE_STATUS, &status)
-            glAttachShader (program, vertShaderID)
+        fragShaderBytes = bytes (fragShader, "utf8")
+        fragShaderSource = fragShaderBytes
+        fragShaderID = glCreateShader (GL_FRAGMENT_SHADER)
+        glShaderSource (fragShaderID, 1, &fragShaderSource, NULL)
+        glCompileShader (fragShaderID)
+        glGetShaderiv (fragShaderID, GL_COMPILE_STATUS, &status)
+        glAttachShader (program, fragShaderID)
 
-            if status != GL_TRUE:
-                glGetShaderiv (vertShaderID, GL_INFO_LOG_LENGTH,
-                    &infoLogLength)
-                infoLogStr = "unknown error"
-                if infoLogLength > 0:
-                    infoLog = <char *> PyMem_Malloc (infoLogLength *
-                        sizeof (char))
-                    for i in range (0, infoLogLength):
-                        infoLog[i] = b'\x00'
-                    glGetShaderInfoLog (vertShaderID, infoLogLength,
-                        &outLogLength, infoLog)
-                    infoLogStr = str (infoLog, "utf8")
-                    PyMem_Free (infoLog)
-                raise RuntimeError ("Vertex shader failed to compile:\n" +
-                    infoLogStr)
+        if status != GL_TRUE:
+            glGetShaderiv (fragShaderID, GL_INFO_LOG_LENGTH,
+                &infoLogLength)
+            infoLogStr = "unknown error"
+            if infoLogLength > 0:
+                infoLog = <char *> PyMem_Malloc (infoLogLength *
+                    sizeof (char))
+                for i in range (0, infoLogLength):
+                    infoLog[i] = b'\x00'
+                glGetShaderInfoLog (fragShaderID, infoLogLength,
+                    &outLogLength, infoLog)
+                infoLogStr = str (infoLog, "utf8")
+                PyMem_Free (infoLog)
+            raise RuntimeError ("Fragment shader failed to compile:\n" +
+                infoLogStr)
+        
+        vertShaderBytes = bytes (vertShader, "utf8")
+        vertShaderSource = vertShaderBytes
+        vertShaderID = glCreateShader (GL_VERTEX_SHADER)
+        glShaderSource (vertShaderID, 1, &vertShaderSource, NULL)
+        glCompileShader (vertShaderID)
+        glGetShaderiv (vertShaderID, GL_COMPILE_STATUS, &status)
+        glAttachShader (program, vertShaderID)
+
+        if status != GL_TRUE:
+            glGetShaderiv (vertShaderID, GL_INFO_LOG_LENGTH,
+                &infoLogLength)
+            infoLogStr = "unknown error"
+            if infoLogLength > 0:
+                infoLog = <char *> PyMem_Malloc (infoLogLength *
+                    sizeof (char))
+                for i in range (0, infoLogLength):
+                    infoLog[i] = b'\x00'
+                glGetShaderInfoLog (vertShaderID, infoLogLength,
+                    &outLogLength, infoLog)
+                infoLogStr = str (infoLog, "utf8")
+                PyMem_Free (infoLog)
+            raise RuntimeError ("Vertex shader failed to compile:\n" +
+                infoLogStr)
         
         glLinkProgram (program)
         glGetProgramiv (program, GL_LINK_STATUS, &status)
 
         if status != GL_TRUE:
-            raise RuntimeError ("Shader program did not link properly")
+            glGetProgramiv (program, GL_INFO_LOG_LENGTH,
+                &infoLogLength)
+            infoLogStr = "unknown error"
+            if infoLogLength > 0:
+                infoLog = <char *> PyMem_Malloc (infoLogLength *
+                    sizeof (char))
+                for i in range (0, infoLogLength):
+                    infoLog[i] = b'\x00'
+                glGetProgramInfoLog (program, infoLogLength,
+                    &outLogLength, infoLog)
+                infoLogStr = str (infoLog, "utf8")
+                PyMem_Free (infoLog)
+            raise RuntimeError ("Shader Program failed to link:\n" +
+                infoLogStr)
         
         if fragShader is not None:
             glDetachShader (program, fragShaderID)

@@ -1,10 +1,13 @@
+#!python3
+#cython: language_level=3
+
 # Copyright (c) 2014, Kate Fox
 # All rights reserved.
 #
 # This file is covered by the 3-clause BSD license.
 # See the LICENSE file in this program's distribution for details.
 
-cdef extern from "main_handled.h":
+cdef extern from "defines.h":
     # Solely to tell SDL that we're handling the main() function.
     pass
 

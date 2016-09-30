@@ -4,7 +4,7 @@
 # This file is covered by the 3-clause BSD license.
 # See the LICENSE file in this program's distribution for details.
 
-from pydoom.extensions.video import ImageSurface
+from pydoom.video import ImageSurface
 import io
 import struct, array
 import zlib
