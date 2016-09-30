@@ -445,13 +445,10 @@ cdef class OpenGLInterface:
         
         self.spriteBuffer = <float *> PyMem_Malloc (18 * sizeof (float))
         cdef int i = 0
-        while i < 18:
+        for i in range (18):
             self.spriteBuffer[i] = 0
-            i += 1
-        i = 0
-        while i < 12:
+        for i in range (12):
             self.spriteBufferUVs[i] = 0
-            i += 1
         
         glGenBuffers (1, &self.spriteBufferID)
         glBindBuffer (GL_ARRAY_BUFFER, self.spriteBufferID)
@@ -494,7 +491,7 @@ cdef class OpenGLInterface:
         glFinish ()
         SDL_GL_SwapWindow (self.window)
     
-    def compileProgram (self, name, fragShader, vertShader):
+    def compileProgram (self, str name, str fragShader, str vertShader):
         """W.compileProgram (name, fragShader, vertShader)
         
         Compiles a shader program from sources, provided as strings."""
@@ -662,13 +659,14 @@ cdef class OpenGLInterface:
         relative dimensions of the image to draw, with 1.0 being the full
         screen size."""
         
-        # 2D array for drawing sprites
+        # 3D vertex array for the sprite's tris
         self.spriteBuffer[0:18] = [
             left+width, 1.0 - (top+height), 0,
-            left+width, 1.0 - top, 0,
-            left, 1.0 - top, 0,
-            left, 1.0 - top, 0,
-            left, 1.0 -  (top+height), 0,
+            left+width, 1.0 - top,          0,
+            left,       1.0 - top,          0,
+            
+            left,       1.0 - top,          0,
+            left,       1.0 - (top+height), 0,
             left+width, 1.0 - (top+height), 0
         ]
         
