@@ -96,14 +96,14 @@ cdef class WadFile:
     def __init__ (self, filename):
         cdef int namespace = NS_GLOBAL
         cdef char[4] magic
-        cdef char[8] header
+        cdef unsigned char[8] header
         cdef bint badmagic = True
         
         cdef int numlumps = 0
         cdef int infotableofs = 0
-        cdef char[4] lumppos_b
+        cdef unsigned char[4] lumppos_b
         cdef size_t lumppos = 0
-        cdef char[4] lumpsize_b
+        cdef unsigned char[4] lumpsize_b
         cdef size_t lumpsize = 0
         cdef char[9] lumpname
         cdef WadEntry direntry = None
@@ -147,15 +147,15 @@ cdef class WadFile:
         memset (header, 0, 8)
         fread (header, 1, 8, self.fileno)
 
-        numlumps = <unsigned char>header[0]
-        numlumps |= <unsigned char>header[1] << 8
-        numlumps |= <unsigned char>header[2] << 16
-        numlumps |= <unsigned char>header[3] << 24
+        numlumps  = header[0]
+        numlumps |= header[1] << 8
+        numlumps |= header[2] << 16
+        numlumps |= header[3] << 24
         
-        infotableofs = <unsigned char>header[4]
-        infotableofs |= <unsigned char>header[5] << 8
-        infotableofs |= <unsigned char>header[6] << 16
-        infotableofs |= <unsigned char>header[7] << 24
+        infotableofs  = header[4]
+        infotableofs |= header[5] << 8
+        infotableofs |= header[6] << 16
+        infotableofs |= header[7] << 24
         
         fseek (self.fileno, infotableofs, SEEK_SET)
         
@@ -166,17 +166,17 @@ cdef class WadFile:
             
             fread (lumppos_b, 1, 4, self.fileno)
             
-            lumppos = <unsigned char>lumppos_b[0]
-            lumppos |= <unsigned char>lumppos_b[1] << 8
-            lumppos |= <unsigned char>lumppos_b[2] << 16
-            lumppos |= <unsigned char>lumppos_b[3] << 24
+            lumppos  = lumppos_b[0]
+            lumppos |= lumppos_b[1] << 8
+            lumppos |= lumppos_b[2] << 16
+            lumppos |= lumppos_b[3] << 24
             
             fread (lumpsize_b, 1, 4, self.fileno)
             
-            lumpsize = <unsigned char>lumpsize_b[0]
-            lumpsize |= <unsigned char>lumpsize_b[1] << 8
-            lumpsize |= <unsigned char>lumpsize_b[2] << 16
-            lumpsize |= <unsigned char>lumpsize_b[3] << 24
+            lumpsize  = lumpsize_b[0]
+            lumpsize |= lumpsize_b[1] << 8
+            lumpsize |= lumpsize_b[2] << 16
+            lumpsize |= lumpsize_b[3] << 24
             
             fread (lumpname, 1, 8, self.fileno)
             

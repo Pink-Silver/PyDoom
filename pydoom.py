@@ -75,7 +75,8 @@ def main ():
                 game = thisgame
     del args
     
-    screen = video.OpenGLInterface ("PyDoom", width, height, fullscreen, False)
+    screen = video.OpenGLWindow ("PyDoom", width, height, fullscreen, False)
+    
     texture = video.ImageSurface (1, 1)
     texture.setPixel (0, 0, (128, 0, 255, 255))
     

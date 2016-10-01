@@ -150,6 +150,7 @@ cdef extern from "<SDL.h>":
     void SDL_GL_SwapWindow (SDL_Window *window)
     SDL_GLContext SDL_GL_CreateContext (SDL_Window *window)
     void SDL_GL_DeleteContext (SDL_GLContext context)
+    int SDL_GL_MakeCurrent (SDL_Window* window, SDL_GLContext context)
 
     SDL_Window *SDL_CreateWindow (const char *title, int x, int y, int w,
         int h, int flags)
@@ -257,7 +258,7 @@ height")
     ### Image Readers ###
 
     @classmethod
-    def LoadDoomGraphic (cls, bytes bytebuffer, palette):
+    def LoadDoomGraphic (cls, bytes bytebuffer, bytes palette):
         """Loads a top-down column-based paletted doom graphic, given the
         graphic's binary data and a palette. Returns an Image usable
         with the OpenGL context."""
@@ -266,24 +267,22 @@ height")
         cdef short width, height, xofs, yofs
         
         cdef size_t bytebuflen = len(bytebuffer)
-        cdef unsigned char *rawbuffer = <unsigned char *> PyMem_Malloc (bytebuflen)
-        cdef const char *bytebuftemp = bytebuffer
+        cdef unsigned char *rawbuffer = bytebuffer
+        cdef unsigned char *rawpalette = palette
         
-        memcpy (<void *>rawbuffer, <const void *>bytebuftemp, bytebuflen)
-        
-        width = rawbuffer[pos+0]
+        width  = rawbuffer[pos+0]
         width |= rawbuffer[pos+1] << 8
         pos += 2
 
-        height = rawbuffer[pos+0]
+        height  = rawbuffer[pos+0]
         height |= rawbuffer[pos+1] << 8
         pos += 2
         
-        xofs = rawbuffer[pos+0]
+        xofs  = rawbuffer[pos+0]
         xofs |= rawbuffer[pos+1] << 8
         pos += 2
 
-        yofs = rawbuffer[pos+0]
+        yofs  = rawbuffer[pos+0]
         yofs |= rawbuffer[pos+1] << 8
         pos += 2
 
@@ -303,10 +302,11 @@ height")
         cdef int columnlength
         cdef int palindex
         cdef int rowpos
+        cdef unsigned int palcolor
         
         # The headers for each column
         for colheader in range (width):
-            byte_ofs = rawbuffer[pos+0]
+            byte_ofs  = rawbuffer[pos+0]
             byte_ofs |= rawbuffer[pos+1]
             byte_ofs |= rawbuffer[pos+2]
             byte_ofs |= rawbuffer[pos+3]
@@ -348,7 +348,10 @@ height")
                     palindex = rawbuffer[byteofs]
                     byteofs += 1
 
-                    palcolor = palette.colors[palindex]
+                    palcolor = 0xFF
+                    palcolor |= rawpalette[2] << 8
+                    palcolor |= rawpalette[1] << 16
+                    palcolor |= rawpalette[0] << 24
                     image.setPixelDirect (column, rowpos + rowstart, palcolor)
 
                 byteofs += 1
@@ -369,7 +372,7 @@ height")
         # TODO
         pass
 
-cdef class OpenGLInterface:
+cdef class OpenGLWindow:
     cdef SDL_Window *window
     cdef SDL_GLContext context
     
@@ -440,6 +443,8 @@ cdef class OpenGLInterface:
             SDL_ClearError ()
             raise RuntimeError (str (err, "utf8"))
         
+        SDL_GL_MakeCurrent (self.window, self.context)
+        
         # Initial hints and setup
         glHint (GL_GENERATE_MIPMAP_HINT, GL_NICEST)
         
@@ -480,6 +485,8 @@ cdef class OpenGLInterface:
         
         Clears the screen."""
         
+        SDL_GL_MakeCurrent (self.window, self.context)
+        
         glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
             GL_STENCIL_BUFFER_BIT)
     
@@ -487,6 +494,8 @@ cdef class OpenGLInterface:
         """W.swap ()
         
         Waits for the frame to fully render, then swaps the screen buffers."""
+        
+        SDL_GL_MakeCurrent (self.window, self.context)
         
         glFinish ()
         SDL_GL_SwapWindow (self.window)
@@ -506,6 +515,8 @@ cdef class OpenGLInterface:
         cdef int infoLogLength = 0
         cdef char *infoLog = NULL
         cdef int outLogLength = 0
+        
+        SDL_GL_MakeCurrent (self.window, self.context)
         
         program = glCreateProgram ()
 
@@ -593,6 +604,8 @@ cdef class OpenGLInterface:
         cdef GLuint programID
         programID = self.shaderPrograms[name]
         
+        SDL_GL_MakeCurrent (self.window, self.context)
+        
         glDeleteProgram (programID)
         del self.shaderPrograms[name]
 
@@ -619,6 +632,8 @@ cdef class OpenGLInterface:
         
         cdef GLuint newtex = 0
         cdef GLuint lastTexture = 0
+        
+        SDL_GL_MakeCurrent (self.window, self.context)
 
         # Image data is assumed provided to us as RGBA8.
 
@@ -645,6 +660,8 @@ cdef class OpenGLInterface:
         Frees up the previously loaded texture specified by name."""
         cdef GLuint textureID
         textureID = self.textures[name]
+        
+        SDL_GL_MakeCurrent (self.window, self.context)
         
         glDeleteTextures (1, &textureID)
         del self.textures[name]
@@ -679,6 +696,8 @@ cdef class OpenGLInterface:
             0, 0,
             1, 0
         ]
+        
+        SDL_GL_MakeCurrent (self.window, self.context)
         
         glUseProgram (self.drawProgram2D)
 

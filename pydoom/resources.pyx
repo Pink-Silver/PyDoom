@@ -21,8 +21,6 @@ from io import TextIOWrapper
 from importlib import import_module
 from os.path import join as joinpath
 
-import pydoom.wadfile
-
 resourcelog = logging.getLogger("PyDoom.Resource")
 
 @cython.cdivision(True)
