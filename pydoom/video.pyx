@@ -8,7 +8,6 @@
 # See the LICENSE file in this program's distribution for details.
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
-from libc.string cimport memcpy
 
 from cpython cimport array
 import array
@@ -235,6 +234,7 @@ height")
         omitted, transparent is assumed."""
         
         if x < 0 or y < 0 or x > self.width or y > self.height:
+            print ("WARNING: Tried to set an out-of-range pixel! X={} Y={}, W={} H={}".format (x, y, self.width, self.height))
             return
         
         cdef size_t startofs = ((y * self.width) + x) * 4
@@ -246,6 +246,7 @@ height")
     
     cdef void setPixelDirect (self, size_t x, size_t y, unsigned int color):
         if x < 0 or y < 0 or x > self.width or y > self.height:
+            print ("WARNING: Tried to set an out-of-range pixel! X={} Y={}, W={} H={}".format (x, y, self.width, self.height))
             return
         
         cdef size_t startofs = ((y * self.width) + x) * 4
@@ -260,13 +261,12 @@ height")
     @classmethod
     def LoadDoomGraphic (cls, bytes bytebuffer, bytes palette):
         """Loads a top-down column-based paletted doom graphic, given the
-        graphic's binary data and a palette. Returns an Image usable
+        graphic's binary data and a binary palette. Returns an Image usable
         with the OpenGL context."""
         cdef int pos = 0
         
-        cdef short width, height, xofs, yofs
+        cdef unsigned short width, height, xofs, yofs
         
-        cdef size_t bytebuflen = len(bytebuffer)
         cdef unsigned char *rawbuffer = bytebuffer
         cdef unsigned char *rawpalette = palette
         
@@ -291,26 +291,26 @@ height")
         image.xoffset = xofs
         image.yoffset = yofs
 
-        colheaders = []
-
-        cdef unsigned int byte_ofs
-        cdef int column
+        cdef unsigned int *colheaders = <unsigned int *> PyMem_Malloc (sizeof (unsigned int) * width)
         
-        cdef int lastrowstart
-        cdef int rowstart
-        cdef int byteofs
-        cdef int columnlength
-        cdef int palindex
-        cdef int rowpos
+        cdef unsigned int byte_ofs
+        cdef unsigned int column
+        
+        cdef short lastrowstart
+        cdef unsigned char rowstart
+        cdef unsigned int byteofs
+        cdef unsigned int columnlength
+        cdef unsigned int palindex
+        cdef unsigned int rowpos
         cdef unsigned int palcolor
         
         # The headers for each column
         for colheader in range (width):
             byte_ofs  = rawbuffer[pos+0]
-            byte_ofs |= rawbuffer[pos+1]
-            byte_ofs |= rawbuffer[pos+2]
-            byte_ofs |= rawbuffer[pos+3]
-            colheaders.append (byte_ofs)
+            byte_ofs |= rawbuffer[pos+1] << 8
+            byte_ofs |= rawbuffer[pos+2] << 16
+            byte_ofs |= rawbuffer[pos+3] << 24
+            colheaders[colheader] = byte_ofs
             pos += 4
 
         # Okay, so in the standard graphic format, if the last row
@@ -329,6 +329,7 @@ height")
         for column in range (width):
             lastrowstart = -1
             rowstart = 0
+            rowpos = 0
             byteofs = colheaders[column]
             while True:
                 rowstart = rawbuffer[byteofs]
@@ -348,16 +349,16 @@ height")
                     palindex = rawbuffer[byteofs]
                     byteofs += 1
 
-                    palcolor = 0xFF
-                    palcolor |= rawpalette[2] << 8
-                    palcolor |= rawpalette[1] << 16
-                    palcolor |= rawpalette[0] << 24
+                    palcolor  = 0xFF
+                    palcolor |= rawpalette[(palindex * 3) + 2] << 8
+                    palcolor |= rawpalette[(palindex * 3) + 1] << 16
+                    palcolor |= rawpalette[(palindex * 3) + 0] << 24
                     image.setPixelDirect (column, rowpos + rowstart, palcolor)
 
                 byteofs += 1
                 lastrowstart = rowstart
 
-        PyMem_Free (rawbuffer)
+        PyMem_Free (colheaders)
         return image
 
     @classmethod
@@ -689,12 +690,12 @@ cdef class OpenGLWindow:
         
         # And UVs
         self.spriteBufferUVs[0:12] = [
-            1, 0,
             1, 1,
-            0, 1,
-            0, 1,
+            1, 0,
             0, 0,
-            1, 0
+            0, 0,
+            0, 1,
+            1, 1
         ]
         
         SDL_GL_MakeCurrent (self.window, self.context)

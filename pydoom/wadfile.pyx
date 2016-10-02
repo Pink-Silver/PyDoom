@@ -7,8 +7,6 @@
 # This file is covered by the 3-clause BSD license.
 # See the LICENSE file in this program's distribution for details.
 
-import struct
-
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libc.stdio cimport SEEK_SET, FILE, fopen, fread, fclose, fseek, sscanf
 from libc.string cimport strcasecmp, memset
@@ -48,15 +46,31 @@ def is_wadfile (filename):
     return False
 
 cdef class WadEntry:
-    cdef public int index
-    cdef public char[9] name
-    cdef public int namespace
-    cdef public size_t size
+    cdef int index
+    cdef char[9] name
+    cdef int namespace
+    cdef size_t size
 
     cdef size_t pos
     cdef char *data
     cdef bint datafilled
     cdef FILE *fileno
+    
+    @property
+    def index (self):
+        return self.index
+    
+    @property
+    def name (self):
+        return self.name
+    
+    @property
+    def namespace (self):
+        return self.namespace
+    
+    @property
+    def size (self):
+        return self.size
     
     def __cinit__ (self, size_t size):
         self.size = size

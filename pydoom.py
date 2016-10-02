@@ -77,10 +77,14 @@ def main ():
     
     screen = video.OpenGLWindow ("PyDoom", width, height, fullscreen, False)
     
-    texture = video.ImageSurface (1, 1)
-    texture.setPixel (0, 0, (128, 0, 255, 255))
+    doomtest = wadfile.WadFile ("games/doom2.wad")
+    graphic = doomtest.FindFirstLump ("TITLEPIC")
+    palette = doomtest.FindFirstLump ("PLAYPAL")
+    gstr = graphic.read()
+    pstr = palette.read()
+    texture = video.ImageSurface.LoadDoomGraphic (gstr, pstr)
     
-    tex = screen.loadTexture ("FIREBLU", texture)
+    screen.loadTexture ("TITLEPIC", texture)
     
     prog = screen.compileProgram ("2DBasic", """#version 320 es
 
@@ -110,13 +114,13 @@ void main ()
 """)
     
     screen.useProgram2D ("2DBasic")
-    screen.drawHud ("FIREBLU", 0.25, 0, 0.5, 0.5)
+    screen.drawHud ("TITLEPIC", 0, 0, 1, 1)
     screen.swap ()
     
     from time import sleep
     sleep (5)
     
-    screen.unloadTexture ("FIREBLU")
+    screen.unloadTexture ("TITLEPIC")
     
     del screen
     utility.shutdown ()
