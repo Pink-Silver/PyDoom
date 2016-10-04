@@ -39,10 +39,15 @@ cdef extern from "<GL/gl.h>":
         GL_NICEST
         GL_DONT_CARE
         
+        GL_BLEND
+        
         GL_RGBA8
         GL_RGBA
         GL_UNSIGNED_BYTE
         GL_FLOAT
+        
+        GL_SRC_ALPHA
+        GL_ONE_MINUS_SRC_ALPHA
         
         GL_NEAREST
         GL_NEAREST_MIPMAP_NEAREST
@@ -95,6 +100,7 @@ cdef extern from "<GL/gl.h>":
     void glUseProgram (GLuint program)
     void glDeleteProgram (GLuint program)
 
+    void glBlendFunc (GLenum sfactor, GLenum dfactor)
     void glClearColor (float red, float green, float blue, float alpha)
     void glClear (int mask)
     
@@ -121,6 +127,7 @@ cdef extern from "<GL/gl.h>":
         GLboolean normalized, GLsizei stride, const GLvoid *pointer)
     void glDrawArrays (GLenum mode, GLint first, GLsizei count)
     
+    void glEnable (GLenum cap)
     void glFinish ()
     GLenum glGetError ()
     
@@ -1136,6 +1143,8 @@ cdef class OpenGLWindow:
         
         glUseProgram (self.drawProgram2D)
 
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_BLEND)
         glBindTexture (GL_TEXTURE_2D, self.textures[texture])
         
         glEnableVertexAttribArray (0)
