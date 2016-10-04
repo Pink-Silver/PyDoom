@@ -416,6 +416,10 @@ height")
         cdef unsigned int width = 0
         cdef unsigned int height = 0
         
+        cdef unsigned int transcolor = 0
+        cdef unsigned int i
+        cdef unsigned int palcount
+        
         cdef int xoffset = 0
         cdef int yoffset = 0
         if not memcmp (cname, b'IHDR', 4):
@@ -455,7 +459,8 @@ height")
         
         elif not memcmp (cname, b'PLTE', 4):
             if properties['colorspace'] != 3:
-                raise ValueError ("PNG has a palette but isn't indexed.")
+                print ("PLTE present in truecolor/greyscale file. sPLT is \
+suggested for this use instead. Ignoring.")
             
             if 'palette' in properties:
                 raise ValueError ("PNG has multiple palettes.")
@@ -488,6 +493,35 @@ height")
             properties['yoffset'] = yoffset
             cpos += 4
         
+        elif not memcmp (cname, b'tRNS', 4):
+            # Paletted texture transparency
+            
+            type = properties['colorspace']
+            if type == 0:
+                # Greyscale Index
+                properties['transparency'] = <unsigned char> cdata[cpos + 1]
+                
+            elif type == 2:
+                # RGB Index
+                
+                transcolor  = <unsigned char> cdata[cpos + 1] << 24
+                transcolor |= <unsigned char> cdata[cpos + 3] << 16
+                transcolor |= <unsigned char> cdata[cpos + 5] << 8
+                # Alpha is 0
+            
+            elif type == 3:
+                # Palette Alpha Table
+                
+                palcount = properties['palcount']
+                properties['transparency'] = b''
+                
+                for i in range (palcount):
+                    if cpos < clen:
+                        properties['transparency'] = properties['transparency'] + (<unsigned char> cdata[cpos]).to_bytes (1, byteorder='big')
+                        cpos += 1
+                    else:
+                        properties['transparency'] = properties['transparency'] + b'\xFF'
+
         else:
             #print ("Don't know what chunk type", cname.decode("utf8"), "is...")
             
@@ -602,6 +636,7 @@ height")
         
         memcpy (rawcdata, <const char *>rawdata, rawdatalen)
         
+        cdef unsigned char *alphapal = NULL
         cdef int rawpalettelen = 0
         cdef unsigned char *rawcpalette = NULL
         if 'palette' in properties:
@@ -737,7 +772,11 @@ height")
                     imagepos += 1 # Skip filter byte
                     
                     for j in range (image.width):
-                        endcolor  = 0xFF
+                        endcolor = 0xFF
+                        if 'transparency' in properties:
+                            if properties['transparency'] == rawcdata[imagepos]:
+                                endcolor = 0x00
+                        
                         endcolor |= rawcdata[imagepos] << 8
                         endcolor |= rawcdata[imagepos] << 16
                         endcolor |= rawcdata[imagepos] << 24
@@ -756,20 +795,30 @@ height")
                         endcolor |= rawcdata[imagepos + 2] << 8
                         endcolor |= rawcdata[imagepos + 1] << 16
                         endcolor |= rawcdata[imagepos] << 24
-                        
+                        if 'transparency' in properties:
+                            if properties['transparency'] == endcolor & 0xFFFFFF00:
+                                endcolor = 0x00000000
+
                         image.setPixelDirect (j, i, endcolor)
                         
                         imagepos += pixelsize
             
             elif properties['colorspace'] == 3:
                 # Indexed
+                if 'transparency' in properties:
+                    ap = properties['transparency']
+                    alphapal = ap
+                
                 for i in range (image.height):
                     imagepos += 1 # Skip filter byte
                     
                     for j in range (image.width):
                         palentry = rawcdata[imagepos]
                         
-                        endcolor  = 0xFF
+                        endcolor = 0xFF
+                        if alphapal != NULL:
+                            endcolor = alphapal[palentry]
+                        
                         endcolor |= rawcpalette[(palentry * 3) + 2] << 8
                         endcolor |= rawcpalette[(palentry * 3) + 1] << 16
                         endcolor |= rawcpalette[(palentry * 3)] << 24
