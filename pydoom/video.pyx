@@ -7,10 +7,14 @@
 # This file is covered by the 3-clause BSD license.
 # See the LICENSE file in this program's distribution for details.
 
+from libc.string cimport memcmp, memcpy
+
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 
 from cpython cimport array
 import array
+
+import zlib
 
 cdef extern from "defines.h":
     pass
@@ -158,6 +162,28 @@ cdef extern from "<SDL.h>":
     const char *SDL_GetError ()
     void SDL_ClearError ()
 
+cdef short PaethSelector (short a, short b, short c):
+    cdef short Ret
+    cdef short p = a + b - c
+    cdef short pa = p - a
+    if pa < 0:
+        pa = -pa
+    cdef short pb = p - b
+    if pb < 0:
+        pb = -pb
+    cdef short pc = p - c
+    if pc < 0:
+        pc = -pc
+    
+    if pa <= pb and pa <= pc:
+        Ret = a
+    elif pb <= pc:
+        Ret = b
+    else:
+        Ret = c
+    
+    return Ret
+
 cdef class ImageSurface:
     cdef size_t width
     cdef size_t height
@@ -243,6 +269,21 @@ height")
         self.data[startofs + 1] = color[1]
         self.data[startofs + 2] = color[2]
         self.data[startofs + 3] = color[3]
+    
+    cdef unsigned int getPixelDirect (self, size_t x, size_t y):
+        if x < 0 or y < 0 or x > self.width or y > self.height:
+            print ("WARNING: Tried to get an out-of-range pixel! X={} Y={}, W={} H={}".format (x, y, self.width, self.height))
+            return 0
+        
+        cdef size_t startofs = ((y * self.width) + x) * 4
+        cdef unsigned int color
+        
+        color  = self.data[startofs] << 24
+        color |= self.data[startofs + 1] << 16
+        color |= self.data[startofs + 2] << 8
+        color |= self.data[startofs + 3]
+        
+        return color
     
     cdef void setPixelDirect (self, size_t x, size_t y, unsigned int color):
         if x < 0 or y < 0 or x > self.width or y > self.height:
@@ -360,18 +401,412 @@ height")
 
         PyMem_Free (colheaders)
         return image
+    
+    @classmethod
+    def ApplyPNGChunk (cls, dict properties, const char *cname, const char *cdata, unsigned int clen):
+        cdef unsigned int cpos = 0
+
+        cdef unsigned int width = 0
+        cdef unsigned int height = 0
+        
+        cdef int xoffset = 0
+        cdef int yoffset = 0
+        if not memcmp (cname, b'IHDR', 4):
+            # Image Header
+            
+            if 'width' in properties:
+                raise ValueError ("PNG has multiple headers.")
+            
+            width  = <unsigned char> cdata[cpos] << 24
+            width |= <unsigned char> cdata[cpos + 1] << 16
+            width |= <unsigned char> cdata[cpos + 2] << 8
+            width |= <unsigned char> cdata[cpos + 3]
+            properties['width'] = width
+            cpos += 4
+            
+            height  = <unsigned char> cdata[cpos] << 24
+            height |= <unsigned char> cdata[cpos + 1] << 16
+            height |= <unsigned char> cdata[cpos + 2] << 8
+            height |= <unsigned char> cdata[cpos + 3]
+            properties['height'] = height
+            cpos += 4
+            
+            properties['bits'] = <unsigned char> cdata[cpos]
+            cpos += 1
+
+            properties['colorspace'] = <unsigned char> cdata[cpos]
+            cpos += 1
+
+            properties['compression'] = <unsigned char> cdata[cpos]
+            cpos += 1
+
+            properties['filters'] = <unsigned char> cdata[cpos]
+            cpos += 1
+
+            properties['interlacing'] = <unsigned char> cdata[cpos]
+            cpos += 1
+        
+        elif not memcmp (cname, b'PLTE', 4):
+            if properties['colorspace'] != 3:
+                raise ValueError ("PNG has a palette but isn't indexed.")
+            
+            if 'palette' in properties:
+                raise ValueError ("PNG has multiple palettes.")
+            
+            properties['palette'] = cdata[0:clen]
+            properties['palcount'] = clen // 3
+        
+        elif not memcmp (cname, b'IDAT', 4):
+            if 'data' not in properties:
+                properties['data'] = cdata[0:clen]
+            else:
+                properties['data'] = properties['data'] + cdata[0:clen]
+        
+        elif not memcmp (cname, b'IEND', 4):
+            pass # We just need to knowledge it exists.
+        
+        elif not memcmp (cname, b'grAb', 4):
+            # ZDoom-style image offsets
+            xoffset  = <unsigned char> cdata[cpos] << 24
+            xoffset |= <unsigned char> cdata[cpos + 1] << 16
+            xoffset |= <unsigned char> cdata[cpos + 2] << 8
+            xoffset |= <unsigned char> cdata[cpos + 3]
+            properties['xoffset'] = xoffset
+            cpos += 4
+            
+            yoffset  = <unsigned char> cdata[cpos] << 24
+            yoffset |= <unsigned char> cdata[cpos + 1] << 16
+            yoffset |= <unsigned char> cdata[cpos + 2] << 8
+            yoffset |= <unsigned char> cdata[cpos + 3]
+            properties['yoffset'] = yoffset
+            cpos += 4
+        
+        else:
+            #print ("Don't know what chunk type", cname.decode("utf8"), "is...")
+            
+            if not cname[0] & 32:
+                raise ValueError ("Cannot decode required chunk ", cname.decode("utf8"))
+            else:
+                #print ("Skipping it.")
+                pass
 
     @classmethod
-    def LoadPNG (cls, bytebuffer):
+    def LoadPNG (cls, bytes bytebuffer):
         """Loads a Portable Network Graphic."""
+        
+        cdef const char *rawbuffer = bytebuffer
+        cdef unsigned int rawbufferlen = len (bytebuffer)
 
-        #decompressor = zlib.decompressobj ()
-
-        if bytebuffer[0:8] != b'\x89PNG\r\n\x1a\n':
+        cdef unsigned int readpos = 0
+        if memcmp (rawbuffer, b'\x89PNG\r\n\x1a\n', 8):
             raise ValueError ("The PNG header is corrupted")
+        
+        readpos += 8
+        
+        cdef unsigned int chunk_num = 0
+        
+        cdef unsigned int chunk_len = 0
+        cdef unsigned char[4] chunk_type
+        cdef unsigned char *chunk_data = NULL
+        cdef unsigned int chunk_crc = 0
 
-        # TODO
-        pass
+        cdef bint chunk_ancilliary = False
+        
+        cdef bint has_chunks = True
+        cdef bint seen_ending = False
+        
+        cdef ImageSurface surface = None
+        cdef dict properties = {}
+        
+        cdef unsigned char bitdepth
+        cdef unsigned int pixelsize
+        cdef unsigned int i
+        cdef unsigned int j
+        cdef unsigned int endcolor
+        cdef unsigned char palentry
+        cdef short color
+        cdef short leftcolor
+        cdef short upcolor
+        cdef short upleftcolor
+        cdef short average
+        cdef unsigned int imagepos
+        cdef unsigned char flt
+        
+        while has_chunks:
+            chunk_len  = <unsigned char> rawbuffer[readpos] << 24
+            chunk_len |= <unsigned char> rawbuffer[readpos + 1] << 16
+            chunk_len |= <unsigned char> rawbuffer[readpos + 2] << 8
+            chunk_len |= <unsigned char> rawbuffer[readpos + 3]
+            readpos += 4
+            
+            chunk_type[0] = rawbuffer[readpos]
+            chunk_type[1] = rawbuffer[readpos + 1]
+            chunk_type[2] = rawbuffer[readpos + 2]
+            chunk_type[3] = rawbuffer[readpos + 3]
+            readpos += 4
+            
+            chunk_ancilliary = chunk_type[0] & 32
+            
+            if chunk_len > 0:
+                chunk_data = <unsigned char *> PyMem_Malloc (sizeof (unsigned char) * chunk_len)
+                
+                for i in range (chunk_len):
+                    chunk_data[i] = rawbuffer[readpos]
+                    readpos += 1
+            else:
+                chunk_data = NULL
+            
+            chunk_crc  = <unsigned char> rawbuffer[readpos] << 24
+            chunk_crc |= <unsigned char> rawbuffer[readpos + 1] << 16
+            chunk_crc |= <unsigned char> rawbuffer[readpos + 2] << 8
+            chunk_crc |= <unsigned char> rawbuffer[readpos + 3]
+            readpos += 4
+            
+            #print ("Chunk length:", chunk_len)
+            #print ("Chunk type:", chunk_type)
+            #print ("Chunk required:", not chunk_ancilliary)
+            #print ("Chunk CRC:", hex (chunk_crc))
+            
+            chunk_num += 1
+            
+            if not memcmp (chunk_type, b'IEND', 4):
+                seen_ending = True
+            
+            try:
+                #print ("Reading chunk...")
+                cls.ApplyPNGChunk (properties, chunk_type, chunk_data[0:chunk_len] if chunk_data != NULL else b'', chunk_len)
+            finally:
+                if chunk_data != NULL:
+                    PyMem_Free (chunk_data)
+                    chunk_data = NULL
+        
+            if readpos >= rawbufferlen or not memcmp (chunk_type, b'IEND', 4):
+                has_chunks = False
+            
+        #print ("Total Chunks:", chunk_num)
+        
+        if not seen_ending:
+            print ("WARNING: PNG didn't have an ending marker! It may be corrupted.")
+
+        # We should have enough data now to decode it
+        rawdata = zlib.decompress (properties['data'])
+        cdef int rawdatalen = len (rawdata)
+        cdef unsigned char *rawcdata = <unsigned char *>PyMem_Malloc (sizeof (char) * rawdatalen)
+        
+        memcpy (rawcdata, <const char *>rawdata, rawdatalen)
+        
+        cdef int rawpalettelen = 0
+        cdef unsigned char *rawcpalette = NULL
+        if 'palette' in properties:
+            rawpalette = properties['palette']
+            rawpalettelen = len (rawpalette)
+            rawcpalette = <unsigned char *>PyMem_Malloc (sizeof (char) * rawpalettelen)
+            
+            memcpy (rawcpalette, <const char *>rawpalette, rawpalettelen)
+        
+        cdef ImageSurface image = cls (properties['width'], properties['height'])
+        if 'xoffset' in properties:
+            image.xoffset = properties['xoffset']
+        if 'yoffset' in properties:
+            image.yoffset = properties['yoffset']
+        
+        if properties['interlacing'] != 0:
+            raise ValueError ("Interlacing is not supported")
+        
+        imagepos = 0
+        color = 0
+        
+        bitdepth = properties['bits']
+        
+        pixelsize = 1
+        if properties['colorspace'] == 0:
+            # Greyscale
+            pixelsize = 1
+            if bitdepth == 16:
+                pixelsize = 2
+        
+        elif properties['colorspace'] == 2:
+            # Truecolor
+            pixelsize = 3
+            if bitdepth == 16:
+                pixelsize = 6
+        
+        elif properties['colorspace'] == 3:
+            # Indexed
+            pixelsize = 1
+        
+        elif properties['colorspace'] == 4:
+            # Greyscale + Alpha
+            pixelsize = 2
+            if bitdepth == 16:
+                pixelsize = 4
+        
+        elif properties['colorspace'] == 6:
+            # Truecolor + Alpha
+            pixelsize = 4
+            if bitdepth == 16:
+                pixelsize = 8
+        
+        for i in range (image.height):
+            flt = rawcdata[imagepos]
+            imagepos += 1
+            
+            for j in range (image.width * pixelsize):
+                if flt == 0:
+                    # None
+                    pass
+
+                elif flt == 1:
+                    # Subtract
+                    color = rawcdata[imagepos]
+                    
+                    leftcolor = 0x00
+                    if j >= pixelsize:
+                        leftcolor = rawcdata[imagepos - pixelsize]
+
+                    color += leftcolor
+                    color %= 256
+                    rawcdata[imagepos] = color
+                    
+                elif flt == 2:
+                    # Upper
+                    color = rawcdata[imagepos]
+                    
+                    upcolor = 0x00
+                    if i > 0:
+                        upcolor = rawcdata[imagepos - ((image.width * pixelsize) + 1)]
+
+                    color += upcolor
+                    color %= 256
+                    rawcdata[imagepos] = color
+                    
+                elif flt == 3:
+                    # Average
+                    color = rawcdata[imagepos]
+                    
+                    leftcolor = 0x00
+                    if j >= pixelsize:
+                        leftcolor = rawcdata[imagepos - pixelsize]
+                    
+                    upcolor = 0x00
+                    if i > 0:
+                        upcolor = rawcdata[imagepos - ((image.width * pixelsize) + 1)]
+                    
+                    average = <long long unsigned int>leftcolor + <long long unsigned int>upcolor
+                    average /= 2
+                    
+                    color += average
+                    color %= 256
+                    rawcdata[imagepos] = color
+                
+                elif flt == 4:
+                    # Overly Goddamn Complicated
+                    
+                    color = rawcdata[imagepos]
+                    
+                    leftcolor = 0x00
+                    if j >= pixelsize:
+                        leftcolor = rawcdata[imagepos - pixelsize]
+                    
+                    upcolor = 0x00
+                    if i > 0:
+                        upcolor = rawcdata[imagepos - ((image.width * pixelsize) + 1)]
+                    
+                    upleftcolor = 0x00
+                    if i > 0 and j >= pixelsize:
+                        upleftcolor = rawcdata[(imagepos - ((image.width * pixelsize) + 1)) - pixelsize]
+                    
+                    color += PaethSelector (leftcolor, upcolor, upleftcolor)
+                    color %= 256
+                    rawcdata[imagepos] = color
+                
+                imagepos += 1
+        
+        imagepos = 0
+        if properties['interlacing'] == 0:
+            if properties['colorspace'] == 0:
+                # Greyscale
+                for i in range (image.height):
+                    imagepos += 1 # Skip filter byte
+                    
+                    for j in range (image.width):
+                        endcolor  = 0xFF
+                        endcolor |= rawcdata[imagepos] << 8
+                        endcolor |= rawcdata[imagepos] << 16
+                        endcolor |= rawcdata[imagepos] << 24
+                        
+                        image.setPixelDirect (j, i, endcolor)
+                        
+                        imagepos += pixelsize
+            
+            elif properties['colorspace'] == 2:
+                # Truecolor
+                for i in range (image.height):
+                    imagepos += 1 # Skip filter byte
+                    
+                    for j in range (image.width):
+                        endcolor  = 0xFF
+                        endcolor |= rawcdata[imagepos + 2] << 8
+                        endcolor |= rawcdata[imagepos + 1] << 16
+                        endcolor |= rawcdata[imagepos] << 24
+                        
+                        image.setPixelDirect (j, i, endcolor)
+                        
+                        imagepos += pixelsize
+            
+            elif properties['colorspace'] == 3:
+                # Indexed
+                for i in range (image.height):
+                    imagepos += 1 # Skip filter byte
+                    
+                    for j in range (image.width):
+                        palentry = rawcdata[imagepos]
+                        
+                        endcolor  = 0xFF
+                        endcolor |= rawcpalette[(palentry * 3) + 2] << 8
+                        endcolor |= rawcpalette[(palentry * 3) + 1] << 16
+                        endcolor |= rawcpalette[(palentry * 3)] << 24
+                        
+                        image.setPixelDirect (j, i, endcolor)
+                        
+                        imagepos += pixelsize
+            
+            elif properties['colorspace'] == 4:
+                # Greyscale + Alpha
+                print ("Greyscale + Alpha")
+                for i in range (image.height):
+                    imagepos += 1 # Skip filter byte
+                    
+                    for j in range (image.width):
+                        endcolor  = rawcdata[imagepos + 1]
+                        endcolor |= rawcdata[imagepos] << 8
+                        endcolor |= rawcdata[imagepos] << 16
+                        endcolor |= rawcdata[imagepos] << 24
+                        
+                        image.setPixelDirect (j, i, endcolor)
+                        
+                        imagepos += pixelsize
+            
+            elif properties['colorspace'] == 6:
+                # Truecolor + Alpha
+                for i in range (image.height):
+                    imagepos += 1 # Skip filter byte
+                    
+                    for j in range (image.width):
+                        endcolor  = rawcdata[imagepos + 3]
+                        endcolor |= rawcdata[imagepos + 2] << 8
+                        endcolor |= rawcdata[imagepos + 1] << 16
+                        endcolor |= rawcdata[imagepos] << 24
+                        
+                        image.setPixelDirect (j, i, endcolor)
+                        
+                        imagepos += pixelsize
+        
+        PyMem_Free (rawcdata)
+        if rawcpalette != NULL:
+            PyMem_Free (rawcpalette)
+        
+        return image
 
 cdef class OpenGLWindow:
     cdef SDL_Window *window
@@ -644,7 +1079,7 @@ cdef class OpenGLWindow:
         glBindTexture (GL_TEXTURE_2D, newtex)
 
         glPixelStorei (GL_UNPACK_ALIGNMENT, 1)
-        glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, image.width, image.height, 0,
+        glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0,
             GL_RGBA, GL_UNSIGNED_BYTE, image.data)
         glGenerateMipmap (GL_TEXTURE_2D)
         glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
