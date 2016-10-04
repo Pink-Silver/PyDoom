@@ -773,7 +773,6 @@ height")
             
             elif properties['colorspace'] == 4:
                 # Greyscale + Alpha
-                print ("Greyscale + Alpha")
                 for i in range (image.height):
                     imagepos += 1 # Skip filter byte
                     
