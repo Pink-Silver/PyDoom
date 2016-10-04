@@ -77,9 +77,13 @@ def main ():
     
     screen = video.OpenGLWindow ("PyDoom", width, height, fullscreen, False)
     
-    graphic = open ("TruecolorAlpha.png", "rb")
+    iwad = wadfile.WadFile ("games/doom2.wad")
+    
+    graphic = iwad.FindFirstLump ("TITLEPIC")
+    palette = iwad.FindFirstLump ("PLAYPAL")
     gstr = graphic.read()
-    texture = video.ImageSurface.LoadPNG (gstr)
+    pstr = palette.read()
+    texture = video.ImageSurface.LoadDoomGraphic (gstr, pstr)
     
     screen.loadTexture ("TITLEPIC", texture)
     
