@@ -31,8 +31,8 @@ setup (
     ext_modules = cythonize (
             [
                 Extension (
-                    "pydoom.video",
-                    ["pydoom/video.pyx"],
+                    "pydoom.interface",
+                    ["pydoom/interface.pyx"],
                     include_dirs = [
                         sdl_dir,
                     ],
@@ -45,21 +45,12 @@ setup (
                 ),
                 
                 Extension (
-                    "pydoom.utility",
-                    ["pydoom/utility.pyx"],
-                    include_dirs = [
-                        sdl_dir
-                    ],
-                    libraries = [
-                        sdl_lib,
-                        sdlmain_lib,
-                        sdltest_lib,
-                    ]
-                ),
-                
-                Extension (
                     "pydoom.resources",
                     ["pydoom/resources.pyx"]
+                ),
+                Extension (
+                    "pydoom.core",
+                    ["pydoom/core.pyx"]
                 ),
                 Extension (
                     "pydoom.wadfile",

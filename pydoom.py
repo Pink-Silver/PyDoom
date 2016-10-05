@@ -35,14 +35,13 @@ except ImportError:
 from pydoom.configuration import loadSystemConfig
 from pydoom.resources import ResourceArchive
 from sys import argv, exit
-import pydoom.video as video
-import pydoom.utility as utility
+import pydoom.interface as interface
 import pydoom.wadfile as wadfile
 
 def main ():
     global masterlog
     
-    utility.initialize ()
+    interface.ready ()
 
     masterlog.info ("PyDoom revision {}".format (GITVERSION))
     if argv[1:]:
@@ -75,7 +74,7 @@ def main ():
                 game = thisgame
     del args
     
-    screen = video.OpenGLWindow ("PyDoom", width, height, fullscreen, False)
+    screen = interface.OpenGLWindow ("PyDoom", width, height, fullscreen, False)
     
     iwad = wadfile.WadFile ("games/doom2.wad")
     
@@ -83,7 +82,7 @@ def main ():
     palette = iwad.FindFirstLump ("PLAYPAL")
     gstr = graphic.read()
     pstr = palette.read()
-    texture = video.ImageSurface.LoadDoomGraphic (gstr, pstr)
+    texture = interface.ImageSurface.LoadDoomGraphic (gstr, pstr)
     
     screen.loadTexture ("TITLEPIC", texture)
     
@@ -124,7 +123,7 @@ void main ()
     screen.unloadTexture ("TITLEPIC")
     
     del screen
-    utility.shutdown ()
+    interface.quit ()
 
 try:
     main ()

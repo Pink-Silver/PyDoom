@@ -135,14 +135,22 @@ cdef extern from "<GL/glext.h>":
     pass
 
 cdef extern from "<SDL.h>":
+    ctypedef long long int Uint64
+    ctypedef int Uint32
+
     ctypedef struct SDL_Window:
         pass
     ctypedef void *SDL_GLContext
     
     enum:
+        SDL_INIT_TIMER
+        SDL_INIT_VIDEO
+        SDL_INIT_EVENTS
+
         SDL_WINDOW_OPENGL
         SDL_WINDOW_FULLSCREEN
         SDL_WINDOW_FULLSCREEN_DESKTOP
+
         SDL_GL_RED_SIZE
         SDL_GL_GREEN_SIZE
         SDL_GL_BLUE_SIZE
@@ -156,6 +164,13 @@ cdef extern from "<SDL.h>":
     
     int SDL_WINDOWPOS_CENTERED_DISPLAY (int display)
     
+    int SDL_Init (Uint32 flags)
+    void SDL_Quit ()
+    void SDL_Delay (Uint32 ms)
+    void SDL_SetMainReady ()
+    Uint64 SDL_GetPerformanceCounter ()
+    Uint64 SDL_GetPerformanceFrequency()
+
     int SDL_GL_SetAttribute (int attr, int value)
     void SDL_GL_SwapWindow (SDL_Window *window)
     SDL_GLContext SDL_GL_CreateContext (SDL_Window *window)
@@ -1216,3 +1231,29 @@ cdef class OpenGLWindow:
         
         glDisableVertexAttribArray(0)
         glDisableVertexAttribArray(1)
+    
+    def tick (self):
+        cdef Uint64 start = 0
+        cdef Uint64 end = 0
+        
+        start = SDL_GetPerformanceCounter ()
+        SDL_Delay (4)
+        end = SDL_GetPerformanceCounter ()
+        
+        return <double>(end - start) / <double>SDL_GetPerformanceFrequency ()
+
+# Module-specific Initialization
+def ready ():
+    cdef int failure = 0
+    cdef const char *err = NULL
+    
+    SDL_SetMainReady ()
+    
+    failure = SDL_Init (SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS)
+    if failure is not 0:
+        err = SDL_GetError ()
+        SDL_ClearError ()
+        raise RuntimeError (str (err, "utf8"))
+
+def quit ():
+    SDL_Quit ()
