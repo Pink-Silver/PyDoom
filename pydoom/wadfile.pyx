@@ -102,10 +102,12 @@ cdef class WadFile:
         encodedfn = filename.encode ("utf8")
         fn = encodedfn
         
+        self.fileno = NULL
         self.fileno = fopen (fn, "rb")
-        
+    
     def __dealloc__ (self):
-        fclose (self.fileno)
+        if self.fileno != NULL:
+            fclose (self.fileno)
     
     def __init__ (self, filename):
         cdef int namespace = NS_GLOBAL
@@ -143,7 +145,7 @@ cdef class WadFile:
             NS_FLATS
         )
         
-        if not self.fileno:
+        if self.fileno == NULL:
             raise IOError ("Could not open " + filename + " for reading")
         
         self.entries = []
