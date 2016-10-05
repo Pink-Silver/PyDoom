@@ -25,10 +25,9 @@ var/
 # Generated files
 pydoom.ini
 PyDoomResource.zip
-pydoom/extensions/video.c
-pydoom/extensions/utility.c
-pydoom/extensions/*.html
-pydoom/extensions/*.dll
+pydoom/*.c
+pydoom/*.html
+pydoom/*.dll
 
 # Installer logs
 pip-log.txt
