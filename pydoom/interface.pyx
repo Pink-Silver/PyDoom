@@ -323,7 +323,9 @@ height")
 
     @classmethod
     def LoadDoomGraphic (cls, bytes bytebuffer, bytes palette):
-        """Loads a top-down column-based paletted doom graphic, given the
+        """ImageSurface.LoadDoomGraphic (bytebuffer, palette) -> ImageSurface
+        
+        Loads a top-down column-based paletted Doom graphic, given the
         graphic's binary data and a binary palette. Returns an Image usable
         with the OpenGL context."""
         cdef int pos = 0
@@ -425,7 +427,7 @@ height")
         return image
     
     @classmethod
-    def ApplyPNGChunk (cls, dict properties, const char *cname, const char *cdata, unsigned int clen):
+    cdef void ApplyPNGChunk (cls, dict properties, const char *cname, const char *cdata, unsigned int clen):
         cdef unsigned int cpos = 0
 
         cdef unsigned int width = 0
@@ -548,7 +550,9 @@ suggested for this use instead. Ignoring.")
 
     @classmethod
     def LoadPNG (cls, bytes bytebuffer):
-        """Loads a Portable Network Graphic."""
+        """ImageSurface.LoadPNG (bytebuffer) -> ImageSurface
+        
+        Loads a Portable Network Graphic from a byte buffer."""
         
         cdef const char *rawbuffer = bytebuffer
         cdef unsigned int rawbufferlen = len (bytebuffer)
@@ -1107,6 +1111,7 @@ cdef class OpenGLWindow:
         """W.unloadProgram (name)
         
         Frees up the previously loaded shader program specified by name."""
+        
         cdef GLuint programID
         programID = self.shaderPrograms[name]
         
@@ -1120,6 +1125,7 @@ cdef class OpenGLWindow:
         
         Specifies the OpenGL Shader Program to use for 2-dimensional
         drawing by name."""
+        
         self.drawProgram2D = self.shaderPrograms[name]
 
     def useProgram3D (self, str name):
@@ -1127,6 +1133,7 @@ cdef class OpenGLWindow:
         
         Specifies the OpenGL Shader Program to use for 3-dimensional
         drawing by name."""
+        
         self.drawProgram3D = self.shaderPrograms[name]
 
     # TODO: Finish these
@@ -1164,6 +1171,7 @@ cdef class OpenGLWindow:
         """W.unloadTexture (name)
         
         Frees up the previously loaded texture specified by name."""
+        
         cdef GLuint textureID
         textureID = self.textures[name]
         
@@ -1232,18 +1240,27 @@ cdef class OpenGLWindow:
         glDisableVertexAttribArray(0)
         glDisableVertexAttribArray(1)
     
-    def tick (self):
+    def tick (self, int delay):
+        """W.tick () -> float
+        
+        Sleeps the program for a specified amount of time, and returns the
+        amount of seconds that passed in that time."""
+        
         cdef Uint64 start = 0
         cdef Uint64 end = 0
         
         start = SDL_GetPerformanceCounter ()
-        SDL_Delay (4)
+        SDL_Delay (delay)
         end = SDL_GetPerformanceCounter ()
         
-        return <double>(end - start) / <double>SDL_GetPerformanceFrequency ()
+        return (<double>end - <double>start) / <double>SDL_GetPerformanceFrequency ()
 
 # Module-specific Initialization
 def ready ():
+    """ready ()
+    
+    Initializes SDL for use."""
+    
     cdef int failure = 0
     cdef const char *err = NULL
     
@@ -1256,4 +1273,8 @@ def ready ():
         raise RuntimeError (str (err, "utf8"))
 
 def quit ():
+    """quit ()
+    
+    Uninitializes and frees SDL."""
+    
     SDL_Quit ()
