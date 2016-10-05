@@ -23,6 +23,8 @@ var/
 *.egg
 
 # Generated files
+*.xsh
+games/
 pydoom.ini
 PyDoomResource.zip
 pydoom/*.c
