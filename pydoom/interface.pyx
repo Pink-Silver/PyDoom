@@ -15,6 +15,9 @@ from cpython cimport array
 import array
 
 import zlib
+import logging
+
+interfacelog = logging.getLogger("PyDoom.Interface")
 
 cdef extern from "defines.h":
     pass
@@ -225,8 +228,7 @@ cdef class ImageSurface:
         """Provides C-level allocation of data structures."""
         
         if width < 1 or height < 1:
-            raise ValueError ("Image surface must have a valid width and \
-height")
+            raise ValueError ("Image surface must have a valid width and height")
         
         self.width = width
         self.height = height
@@ -262,6 +264,7 @@ height")
         Returns a color as a (red, green, blue, alpha) tuple."""
         
         if x < 0 or y < 0 or x > self.width or y > self.height:
+            interfacelog.warning ("Tried to get an out-of-range pixel! X={} Y={}, W={} H={}".format (x, y, self.width, self.height))
             return 0
         
         cdef size_t startofs = ((y * self.width) + x) * 4
@@ -282,7 +285,7 @@ height")
         omitted, transparent is assumed."""
         
         if x < 0 or y < 0 or x > self.width or y > self.height:
-            print ("WARNING: Tried to set an out-of-range pixel! X={} Y={}, W={} H={}".format (x, y, self.width, self.height))
+            interfacelog.warning ("Tried to set an out-of-range pixel! X={} Y={}, W={} H={}".format (x, y, self.width, self.height))
             return
         
         cdef size_t startofs = ((y * self.width) + x) * 4
@@ -294,7 +297,7 @@ height")
     
     cdef unsigned int getPixelDirect (self, size_t x, size_t y):
         if x < 0 or y < 0 or x > self.width or y > self.height:
-            print ("WARNING: Tried to get an out-of-range pixel! X={} Y={}, W={} H={}".format (x, y, self.width, self.height))
+            interfacelog.warning ("Tried to get an out-of-range pixel! X={} Y={}, W={} H={}".format (x, y, self.width, self.height))
             return 0
         
         cdef size_t startofs = ((y * self.width) + x) * 4
@@ -309,7 +312,7 @@ height")
     
     cdef void setPixelDirect (self, size_t x, size_t y, unsigned int color):
         if x < 0 or y < 0 or x > self.width or y > self.height:
-            print ("WARNING: Tried to set an out-of-range pixel! X={} Y={}, W={} H={}".format (x, y, self.width, self.height))
+            interfacelog.warning ("Tried to set an out-of-range pixel! X={} Y={}, W={} H={}".format (x, y, self.width, self.height))
             return
         
         cdef size_t startofs = ((y * self.width) + x) * 4
@@ -426,8 +429,7 @@ height")
         PyMem_Free (colheaders)
         return image
     
-    @classmethod
-    cdef void ApplyPNGChunk (cls, dict properties, const char *cname, const char *cdata, unsigned int clen):
+    cdef void ApplyPNGChunk (self, dict properties, const char *cname, const char *cdata, unsigned int clen):
         cdef unsigned int cpos = 0
 
         cdef unsigned int width = 0
@@ -476,8 +478,7 @@ height")
         
         elif not memcmp (cname, b'PLTE', 4):
             if properties['colorspace'] != 3:
-                print ("PLTE present in truecolor/greyscale file. sPLT is \
-suggested for this use instead. Ignoring.")
+                interfacelog.info ("PLTE present in truecolor/greyscale file. sPLT is suggested for this use instead. Ignoring.")
             
             if 'palette' in properties:
                 raise ValueError ("PNG has multiple palettes.")
@@ -540,12 +541,12 @@ suggested for this use instead. Ignoring.")
                         properties['transparency'] = properties['transparency'] + b'\xFF'
 
         else:
-            #print ("Don't know what chunk type", cname.decode("utf8"), "is...")
+            interfacelog.info ("Don't know what chunk type", cname.decode("utf8"), "is.")
             
             if not cname[0] & 32:
                 raise ValueError ("Cannot decode required chunk ", cname.decode("utf8"))
             else:
-                #print ("Skipping it.")
+                interfacelog.info ("Skipping it.")
                 pass
 
     @classmethod
@@ -646,7 +647,7 @@ suggested for this use instead. Ignoring.")
         #print ("Total Chunks:", chunk_num)
         
         if not seen_ending:
-            print ("WARNING: PNG didn't have an ending marker! It may be corrupted.")
+            interfacelog.warning ("PNG didn't have an ending marker! It may be corrupted.")
 
         # We should have enough data now to decode it
         rawdata = zlib.decompress (properties['data'])
@@ -677,32 +678,34 @@ suggested for this use instead. Ignoring.")
         imagepos = 0
         color = 0
         
+        cdef int colorspace = properties['colorspace']
+        
         bitdepth = properties['bits']
         
         pixelsize = 1
-        if properties['colorspace'] == 0:
+        if colorspace == 0:
             # Greyscale
             pixelsize = 1
             if bitdepth == 16:
                 pixelsize = 2
         
-        elif properties['colorspace'] == 2:
+        elif colorspace == 2:
             # Truecolor
             pixelsize = 3
             if bitdepth == 16:
                 pixelsize = 6
         
-        elif properties['colorspace'] == 3:
+        elif colorspace == 3:
             # Indexed
             pixelsize = 1
         
-        elif properties['colorspace'] == 4:
+        elif colorspace == 4:
             # Greyscale + Alpha
             pixelsize = 2
             if bitdepth == 16:
                 pixelsize = 4
         
-        elif properties['colorspace'] == 6:
+        elif colorspace == 6:
             # Truecolor + Alpha
             pixelsize = 4
             if bitdepth == 16:
@@ -785,7 +788,7 @@ suggested for this use instead. Ignoring.")
         
         imagepos = 0
         if properties['interlacing'] == 0:
-            if properties['colorspace'] == 0:
+            if colorspace == 0:
                 # Greyscale
                 for i in range (image.height):
                     imagepos += 1 # Skip filter byte
@@ -804,7 +807,7 @@ suggested for this use instead. Ignoring.")
                         
                         imagepos += pixelsize
             
-            elif properties['colorspace'] == 2:
+            elif colorspace == 2:
                 # Truecolor
                 for i in range (image.height):
                     imagepos += 1 # Skip filter byte
@@ -822,7 +825,7 @@ suggested for this use instead. Ignoring.")
                         
                         imagepos += pixelsize
             
-            elif properties['colorspace'] == 3:
+            elif colorspace == 3:
                 # Indexed
                 if 'transparency' in properties:
                     ap = properties['transparency']
@@ -846,7 +849,7 @@ suggested for this use instead. Ignoring.")
                         
                         imagepos += pixelsize
             
-            elif properties['colorspace'] == 4:
+            elif colorspace == 4:
                 # Greyscale + Alpha
                 for i in range (image.height):
                     imagepos += 1 # Skip filter byte
@@ -861,7 +864,7 @@ suggested for this use instead. Ignoring.")
                         
                         imagepos += pixelsize
             
-            elif properties['colorspace'] == 6:
+            elif colorspace == 6:
                 # Truecolor + Alpha
                 for i in range (image.height):
                     imagepos += 1 # Skip filter byte
@@ -1270,7 +1273,7 @@ def ready ():
     if failure is not 0:
         err = SDL_GetError ()
         SDL_ClearError ()
-        raise RuntimeError (str (err, "utf8"))
+        raise RuntimeError (err.decode ("utf8"))
 
 def quit ():
     """quit ()
