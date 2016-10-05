@@ -9,6 +9,8 @@
 import traceback
 import logging
 
+import zipfile, array # Hints for cx_Freeze
+
 # sys.path manipulation
 from sys import stdout
 
